@@ -1,4 +1,57 @@
 {
   "collection": "@nestjs/schematics",
-  "sourceRoot": "src"
+  "sourceRoot": "apps/ubimp.api/src",
+  "projects": {
+    "ubimp.domain": {
+      "type": "library",
+      "root": "libs/ubimp.domain",
+      "entryFile": "index",
+      "sourceRoot": "libs/ubimp.domain/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/ubimp.domain/tsconfig.lib.json"
+      }
+    },
+    "ubimp.infrastructure": {
+      "type": "library",
+      "root": "libs/ubimp.infrastructure",
+      "entryFile": "index",
+      "sourceRoot": "libs/ubimp.infrastructure/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/ubimp.infrastructure/tsconfig.lib.json"
+      }
+    },
+    "ubimp.application": {
+      "type": "library",
+      "root": "libs/ubimp.application",
+      "entryFile": "index",
+      "sourceRoot": "libs/ubimp.application/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/ubimp.application/tsconfig.lib.json"
+      }
+    },
+    "ubimp.api": {
+      "type": "application",
+      "root": "apps/ubimp.api",
+      "entryFile": "main",
+      "sourceRoot": "apps/ubimp.api/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/ubimp.api/tsconfig.app.json"
+      }
+    },
+    "ubimp.web": {
+      "type": "application",
+      "root": "apps/ubimp.web",
+      "entryFile": "main",
+      "sourceRoot": "apps/ubimp.web/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/ubimp.web/tsconfig.app.json"
+      }
+    }
+  },
+  "compilerOptions": {
+    "webpack": true,
+    "tsConfigPath": "apps/ubimp.api/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/ubimp.api"
 }
