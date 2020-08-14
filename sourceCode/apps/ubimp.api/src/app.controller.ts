@@ -1,12 +1,24 @@
-import { Controller, Get } from '@nestjs/common';
-import { AppService } from './app.service';
+import { Controller, Request, UseGuards, Post, Body } from '@nestjs/common';
+import { LocalAuthGuard } from 'uba/ubimp.application/services/auth/local-auth.guard';
+import { SignInCommand } from 'uba/ubimp.application/services/auth/signIn.command';
+import { AuthService } from 'uba/ubimp.application/services/auth/auth.service';
 
 @Controller()
 export class AppController {
-  constructor(private readonly appService: AppService) {}
+  constructor(private authService: AuthService) {}
 
-  @Get()
-  getHello(): any {
-    return this.appService.getHello();
+  @UseGuards(LocalAuthGuard)
+  @Post('auth/login')
+  async login(@Request() req) {
+    return req.user;
+
   }
+
+
+  @Post('auth/signIn')
+  async sigIn(@Body() signInCommand: SignInCommand) {
+
+    return await this.authService.signIn(signInCommand);
+  }
+
 }

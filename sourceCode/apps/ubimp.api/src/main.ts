@@ -3,16 +3,22 @@ import {WsAdapter} from '@nestjs/platform-ws';
 import { UbimpApiModule } from './ubimp.api.module';
 import * as fs from 'fs';
 
+import { join } from 'path';
+import { AppConfigService } from 'uba/ubimp.application/config/appConfig.service';
+import { ValidationPipe } from '@nestjs/common';
+
 async function bootstrap() {
 
   const httpsOptions = {
-    key: fs.readFileSync('./security/localhost.key'),
-    cert: fs.readFileSync('./security/localhost.pem'),
+    key: fs.readFileSync('./certs/localhost.key'),
+    cert: fs.readFileSync('./certs/localhost.pem'),
   };
 
   const app = await NestFactory.create(UbimpApiModule, {
     httpsOptions,
   });
+
+  const appConfigService = app.get<AppConfigService>(AppConfigService);
 
   app.enableCors({
     origin: true,
@@ -26,7 +32,12 @@ async function bootstrap() {
       next();
     });
 
+  app.useGlobalPipes(new ValidationPipe( {  disableErrorMessages : appConfigService.getDisableErrorMessages() } ));
+  app.connectMicroservice({ transport: appConfigService.getMicroserviceProtocol(), options: {  port: appConfigService.getMicroservicePort() } } );
+
   // app.useWebSocketAdapter(new WsAdapter(app));
-  await app.listen(3000);
+  await app.startAllMicroservicesAsync();
+  await app.listen(appConfigService.getWebPort());
 }
+
 bootstrap();

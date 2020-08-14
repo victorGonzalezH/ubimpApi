@@ -9,6 +9,7 @@
       "sourceRoot": "libs/ubimp.domain/src",
       "compilerOptions": {
         "tsConfigPath": "libs/ubimp.domain/tsconfig.lib.json"
+      
       }
     },
     "ubimp.infrastructure": {
@@ -29,6 +30,7 @@
         "tsConfigPath": "libs/ubimp.application/tsconfig.lib.json"
       }
     },
+
     "ubimp.api": {
       "type": "application",
       "root": "apps/ubimp.api",
@@ -36,8 +38,10 @@
       "sourceRoot": "apps/ubimp.api/src",
       "compilerOptions": {
         "tsConfigPath": "apps/ubimp.api/tsconfig.app.json"
+        
       }
     },
+
     "ubimp.web": {
       "type": "application",
       "root": "apps/ubimp.web",
@@ -50,7 +54,9 @@
   },
   "compilerOptions": {
     "webpack": true,
-    "tsConfigPath": "apps/ubimp.api/tsconfig.app.json"
+    "tsConfigPath": "apps/ubimp.api/tsconfig.app.json",
+    "assets": ["apps/ubimp.api/assets/*.html"],
+    "watchAssets": true
   },
   "monorepo": true,
   "root": "apps/ubimp.api"

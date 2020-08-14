@@ -1,0 +1,49 @@
+# compiled output
+/dist
+/node_modules
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# OS
+.DS_Store
+
+# Tests
+/coverage
+/.nyc_output
+
+# IDEs and editors
+/.idea
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+#Custom
+domain.utils-1.0.0.tgz
+infrastructure.utils-1.0.0.tgz
+utils-1.0.0.tgz
+vscode-profile-2020-08-03-14-01-11.cpuprofile
+/certs/
+/.vscode/
+UbimpApiTechnicalDocumentation.odt
+/docs/UbimpApiTechnicalDocumentation.odt
+docs/.~lock.ubimpBluePrint.odp#
+docs/UbimpApiTechnicalDocumentation.odt
+sourceCode/.env
+docs/ubimpBluePrint.odp
+sourceCode/.env

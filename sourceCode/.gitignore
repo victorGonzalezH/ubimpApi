@@ -32,3 +32,13 @@ lerna-debug.log*
 !.vscode/tasks.json
 !.vscode/launch.json
 !.vscode/extensions.json
+
+#Custom
+domain.utils-1.0.0.tgz
+utils-1.0.0.tgz
+vscode-profile-2020-08-03-14-01-11.cpuprofile
+/certs/
+/.vscode/
+UbimpApiTechnicalDocumentation.odt
+infrastructure.utils-1.0.0.tgz
+/docs/UbimpApiTechnicalDocumentation.odt

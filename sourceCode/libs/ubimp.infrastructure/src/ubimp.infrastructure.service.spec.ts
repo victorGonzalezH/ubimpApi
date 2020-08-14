@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { Ubimp.InfrastructureService } from './ubimp.infrastructure.service';
+import { UbimpInfrastructureService } from './ubimp.infrastructure.service';
 
 describe('Ubimp.InfrastructureService', () => {
-  let service: Ubimp.InfrastructureService;
+  let service: UbimpInfrastructureService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [Ubimp.InfrastructureService],
+      providers: [UbimpInfrastructureService],
     }).compile();
 
-    service = module.get<Ubimp.InfrastructureService>(Ubimp.InfrastructureService);
+    service = module.get<UbimpInfrastructureService>(UbimpInfrastructureService);
   });
 
   it('should be defined', () => {
