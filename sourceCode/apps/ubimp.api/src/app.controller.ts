@@ -10,7 +10,9 @@ export class AppController {
   @UseGuards(LocalAuthGuard)
   @Post('auth/login')
   async login(@Request() req) {
-    return req.user;
+
+    return this.authService.login(req.user);
+    // "systemId": "5ee56542627a3942b831937b"
 
   }
 

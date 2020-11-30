@@ -25,9 +25,12 @@ import { JwtService, JwtModule } from '@nestjs/jwt';
 // import { JwtService, JwtModule } from '@nestjs/jwt';
 import { VerifyController } from './controllers/verify/verify.controller';
 import { ActivateController } from './controllers/activate/activate.controller';
+import { StartupService } from './services/startup/startup.service';
+import { NetController } from './controllers/net/net.controller';
+import { DevicesController } from './controllers/devices/devices.controller';
 
 @Module({
-  providers: [Logger, ConfigService, AppConfigService ],
+  providers: [Logger, ConfigService, AppConfigService, StartupService ],
   imports: [UbimpApplicationModule, UbimpInfrastructureModule, UbimpDomainModule,
             ScheduleModule.forRoot(),
             ConfigModule.forRoot({ load: [configuration] }),
@@ -36,6 +39,6 @@ import { ActivateController } from './controllers/activate/activate.controller';
               useClass: DatabaseConfigService,
               inject: [ConfigService],
             }) ],
-  controllers: [AppController, VerifyController, ActivateController],
+  controllers: [AppController, VerifyController, ActivateController, NetController, DevicesController],
 })
 export class UbimpApiModule {}
