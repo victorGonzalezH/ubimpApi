@@ -25,28 +25,32 @@ constructor(private jwtService: JwtService,
  * @param password Contrasena
  */
 async validateUser(username: string, password: string, systemId: string): Promise<IAuthenticatedUser> {
+
+  const user = await this.ubimpApplication.getUser(username);
+  if (user) {
+    const compareResult = bcrypt.compareSync(password, user.password);
+    if (compareResult === true) {
+        return { username, id: user._id };
+    }
+
+    return null;
+  }
+
+  return null;
+
   // const pattern = { command: 'getByUsername' };
   // const payload = { callSource: 1, username, systemId};
   // const user = await this.client.send(pattern, payload).toPromise()
   // .catch(exception => {
   //     throw exception;
   // });
-  // if (user) {
-  //     const compareResult = bcrypt.compareSync(password, user.password);
-  //     if (compareResult === true) {
-  //         return { username, id: user.id };
-  //     }
 
-  //     return null;
-  //   }
-
-  return null;
   }
 
   async login(user: any) {
     const payload = { username: user.username, sub: user.userId };
     return {
-      access_token: this.jwtService.sign(payload),
+      token: this.jwtService.sign(payload),
     };
   }
 

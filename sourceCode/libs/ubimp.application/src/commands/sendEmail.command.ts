@@ -1,4 +1,4 @@
-import { Langs } from "utils/dist/application/Enums/langs.enum";
+import { Langs } from 'utils/dist/application/Enums/langs.enum';
 
 export interface SendEmailCommand {
 

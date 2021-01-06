@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { Transport } from '@nestjs/common/enums/transport.enum';
+import { Transport } from '@nestjs/microservices/enums/transport.enum';
 import { Langs } from 'utils/dist/application/Enums/langs.enum';
 import { SignOptions } from 'jsonwebtoken';
 import { EnvironmentTypes } from 'utils/dist/application/Enums/environmentTypes.enum';
@@ -41,6 +41,8 @@ export class AppConfigService {
     private activationTokenLocal: SignOptions;
     private accessTokenLocal: SignOptions;
 
+    private smsVerificationCodeLengthLocal: number;
+
     constructor(private configService: ConfigService) {
         this.environmentDescription = process.env.NODE_ENV === 'production' ? 'production' : 'development' ;
         if (this.environmentDescription === 'production') { this.environment = EnvironmentTypes.prod; } else if (this.environmentDescription === 'quality') { this.environment = EnvironmentTypes.qa; } else { this.environment = EnvironmentTypes.dev;}
@@ -69,6 +71,7 @@ export class AppConfigService {
 
         this.activationTokenLocal = this.configService.get<SignOptions>(this.envTag + '.tokens.activation');
         this.accessTokenLocal = this.configService.get<SignOptions>(this.envTag + '.tokens.access');
+        this.smsVerificationCodeLengthLocal = this.configService.get<number>('sms_verification_code_length');
     }
 
     /**
@@ -129,6 +132,7 @@ export class AppConfigService {
 
 
     public getInfrastructureServiceConfig() {
+
         // tslint:disable-next-line: max-line-length
         return {  transport: this.infrastructureServiceProtocol, options: { host: this.infrastructureServiceHost, port: this.infrastructureServicePort  } };
     }
@@ -170,6 +174,13 @@ export class AppConfigService {
     get currentHost() {
 
         return  `${this.webProtocol}://${this.webHost}:${this.webPort}`;
+    }
+
+    /**
+     * Longitud del codigo de verificacion del sms
+     */
+    get smsVerificationCodeLength() {
+        return this.smsVerificationCodeLengthLocal;
     }
 
 }

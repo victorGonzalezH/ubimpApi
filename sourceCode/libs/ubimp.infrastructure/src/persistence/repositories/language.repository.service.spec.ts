@@ -1,15 +1,15 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { UbimpDomainService } from './ubimp.domain.service';
+import { LanguageRepository } from './language.repository.service';
 
-describe('Ubimp.DomainService', () => {
-  let service: UbimpDomainService;
+describe('Language.RepositoryService', () => {
+  let service: LanguageRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [], // <-- UbimpDomainService
+      providers: [], // <-- LanguageRepository
     }).compile();
 
-    // service = module.get<UbimpDomainService>(UbimpDomainService);
+    // service = module.get<LanguageRepository>(LanguageRepository);
   });
 
   // it('should be defined', () => {
@@ -19,5 +19,5 @@ describe('Ubimp.DomainService', () => {
   it('should be true', () => {
     expect(true).toBeTruthy();
   });
-
+  
 });

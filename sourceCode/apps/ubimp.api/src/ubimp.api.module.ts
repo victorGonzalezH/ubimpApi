@@ -9,10 +9,10 @@ import { AppController } from './app.controller';
 //import { AppConfigService } from './config/appConfig.service';
 
 import { UbimpApplicationModule } from 'uba/ubimp.application';
-import { UbimpInfrastructureModule } from '@ubi/ubimp.infrastructure';
+import { LanguageSchema, MessageSchema, MessagesSchema, UbimpInfrastructureModule } from '@ubi/ubimp.infrastructure';
 import { UbimpDomainModule, Message, Messages } from '@ubd/ubimp.domain';
 import { ClientProxyFactory } from '@nestjs/microservices';
-import { RealTimeWebSocketGateway } from './gateways/real-time-web-socket.gateway';
+// import { RealTimeWebSocketGateway } from './gateways/real-time-web-socket.gateway';
 import configuration from 'uba/ubimp.application/config/configuration';
 import { DatabaseConfigService } from 'uba/ubimp.application/config/databaseConfig.service';
 import { AppConfigService } from 'uba/ubimp.application/config/appConfig.service';
@@ -28,9 +28,12 @@ import { ActivateController } from './controllers/activate/activate.controller';
 import { StartupService } from './services/startup/startup.service';
 import { NetController } from './controllers/net/net.controller';
 import { DevicesController } from './controllers/devices/devices.controller';
+import { CountrySchema } from '@ubi/ubimp.infrastructure/persistence/schemas/country.schema';
+import { SocketioGateway } from './gateways/real-time-socketio.gateway';
+
 
 @Module({
-  providers: [Logger, ConfigService, AppConfigService, StartupService ],
+  providers: [Logger, ConfigService, AppConfigService, StartupService, SocketioGateway ],
   imports: [UbimpApplicationModule, UbimpInfrastructureModule, UbimpDomainModule,
             ScheduleModule.forRoot(),
             ConfigModule.forRoot({ load: [configuration] }),
@@ -38,7 +41,12 @@ import { DevicesController } from './controllers/devices/devices.controller';
               imports: [ConfigModule],
               useClass: DatabaseConfigService,
               inject: [ConfigService],
-            }) ],
+            }), MongooseModule.forFeature([
+              { name: 'Message', schema: MessageSchema },
+              { name: 'Messages', schema: MessagesSchema },
+              { name: 'Language', schema: LanguageSchema },
+              { name: 'Country', schema: CountrySchema },
+            ]) ],
   controllers: [AppController, VerifyController, ActivateController, NetController, DevicesController],
 })
 export class UbimpApiModule {}

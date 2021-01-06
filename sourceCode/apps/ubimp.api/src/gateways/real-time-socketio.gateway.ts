@@ -1,19 +1,26 @@
 import { SubscribeMessage, WebSocketGateway, OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect, WebSocketServer } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { Subject, Observable } from 'rxjs';
+import { UbimpApplicationService } from 'uba/ubimp.application';
 
 @WebSocketGateway()
 export class SocketioGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
-  @WebSocketServer()  server: Server;
+  /**
+   * Servidor socket io.
+   */
+  @WebSocketServer() // Con este decorador, nestjs asigna el servidor a esta variable una vez que esta listo
+  private server: Server;
 
-  private localSockets: Socket[];
+  private localClients: Socket[];
 
-  get sockets(): Socket[] {
-    return this.localSockets;
+  get clients(): Socket[] {
+    return this.localClients;
   }
 
+
   private localIsInitialized: boolean;
+
 
   /**
    * Indica si el servidor socket.io esta inicializado
@@ -35,23 +42,55 @@ export class SocketioGateway implements OnGatewayInit, OnGatewayConnection, OnGa
 
   private noInitializedMessage: string;
 
-  constructor() {
-    this.localSockets = [];
-    this.noInitializedMessage = 'Server not initialized';
-  }
-
-  handleConnection(client: Socket, ...args: any[]) {
-    this.localSockets.push(client);
+  /**
+   * 
+   * @param ubimpApp Aplicacion Ubimp
+   */
+  constructor(private ubimpApp: UbimpApplicationService) {
+    // Se inicializa el arreglo de clientes
+    this.localClients = [];
     
+    this.noInitializedMessage = 'Server not initialized';
+
+    // Se suscribe al observable para escuchar las ubicaciones 
+    this.ubimpApp.locations
+    .subscribe({ next: newLocation => {
+
+      this.server.emit('newLocation', newLocation);
+
+    }, error: error => {}, complete: () => {} })
+
   }
 
+
+  /**
+   * Evento que se dispara cuando se conecta un client socketio
+   * @param client Cliente socketio
+   * @param args 
+   */
+  handleConnection(client: Socket, ...args: any[]) {
+    this.localClients.push(client);
+
+  }
+
+  /**
+   * Evento que se dispara cuando se desconecta un client socketio
+   * @param client Cliente que se desconecta
+   */
   handleDisconnect(client: Socket) {
 
   }
 
+
+ /**
+  * Evento que se dispara cuando el servidor esta lista y escuchando a las conexiones de los clientes
+  * @param server 
+  */
   afterInit(server: any) {
     this.localIsInitialized = true;
+    // Aqui no es necesario asignar el parametro server a la variable global server ya que se usa el decorador
   }
+
 
   /**
    * 

@@ -3,7 +3,7 @@ import { UbimpApplicationService } from './ubimp.application.service';
 import { AuthService } from './services/auth/auth.service';
 import { LocalStrategy } from './services/auth/local.strategy';
 import { JwtModule, JwtService } from '@nestjs/jwt';
-import { UbimpInfrastructureModule, MessageSchema, MessagesSchema } from '@ubi/ubimp.infrastructure';
+import { UbimpInfrastructureModule, MessageSchema, MessagesSchema, LanguageSchema } from '@ubi/ubimp.infrastructure';
 import { UbimpDomainModule } from '@ubd/ubimp.domain';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
@@ -11,12 +11,17 @@ import { ClientProxyFactory } from '@nestjs/microservices';
 import { AppConfigService } from './config/appConfig.service';
 import { ConfigService } from '@nestjs/config';
 import { TemplatesManager } from './services/templates/templatesManager.service';
-import { MessagesRepositoryService } from '@ubi/ubimp.infrastructure/persistence/messages.repository.service';
+import { MessagesRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/messages.repository.service';
 import { WinstonModule } from 'nest-winston';
+import { DevicesApplication } from './usecases/devices/devices.application.service';
 import * as winston from 'winston';
+import { LanguageRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/language.repository.service';
+import { CountrySchema } from '@ubi/ubimp.infrastructure/persistence/schemas/country.schema';
+import { CountriesRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/countries-repository/countries-repository.service';
 
 @Module({
-  providers: [UbimpApplicationService, LocalStrategy, AuthService, AppConfigService, ConfigService,
+  providers: [UbimpApplicationService, LocalStrategy, AuthService,
+    AppConfigService, ConfigService,
     {
       provide: 'USERS_SERVICE',
       useFactory: (appConfigService: AppConfigService) => {
@@ -40,7 +45,10 @@ import * as winston from 'winston';
     }, inject: [AppConfigService ],
 
   },
-  MessagesRepositoryService,
+  MessagesRepository,
+  DevicesApplication,
+  LanguageRepository,
+  CountriesRepository,
   ],
   exports: [UbimpApplicationService, AuthService],
   imports: [UbimpInfrastructureModule, PassportModule,
@@ -59,6 +67,10 @@ import * as winston from 'winston';
             UbimpDomainModule, JwtModule.register({ secret: 'hard!to-guess_secret' }),
             MongooseModule.forFeature([
               { name: 'Message', schema: MessageSchema },
-              { name: 'Messages', schema: MessagesSchema }])],
+              { name: 'Messages', schema: MessagesSchema },
+              { name: 'Language', schema: LanguageSchema },
+              { name: 'Country', schema: CountrySchema },
+            ]),
+            ],
 })
 export class UbimpApplicationModule {}

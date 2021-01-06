@@ -1,5 +1,6 @@
 export default () => ({
     id: process.env.ID,
+    sms_verification_code_length: process.env.SMS_VERIFICATION_CODE_LENGTH,
     defaultLanguage: process.env.DEFAULT_LANGUAGE,
     dev: {
         passwordSaltRounds: process.env.DEV_PASSWORD_SALT_ROUNDS,

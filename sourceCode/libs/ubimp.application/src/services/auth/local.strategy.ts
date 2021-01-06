@@ -1,6 +1,6 @@
 import { Strategy } from 'passport-local';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, InternalServerErrorException, HttpException, HttpStatus } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AppConfigService } from 'uba/ubimp.application/config/appConfig.service';
 import { LoginCommand } from 'uba/ubimp.application/commands/login.command';
@@ -22,11 +22,17 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
    */
   async validate(req: any, username: string, password: string): Promise<any> {
   try {
-    const systemId: string = req.body.systemId;
-    const loginCommand = new LoginCommand(username, password, systemId);
+    // const systemId: string = req.body.systemId;
+    const loginCommand = new LoginCommand(username, password);
+    // Valida el comando login
     const validationError = await validate(loginCommand);
-    if (validationError.length > 0) { throw new BadRequestException(); }
-    const user = await this.authService.validateUser(username, password, systemId);
+    if (validationError.length > 0) {
+
+      // throw new BadRequestException();
+      throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
+    }
+
+    const user = await this.authService.validateUser(username, password, this.appConfigService.getSystemId());
     if (!user) {
       throw new UnauthorizedException();
     }
@@ -39,7 +45,8 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
 
     if (exception.message) {
       if ( (exception.message as string).includes('BadRequest') ) {
-          throw new BadRequestException();
+          // throw new BadRequestException();
+          throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
        }
 
       if ( (exception.message as string).includes('InternalServerError') ) {

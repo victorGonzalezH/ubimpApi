@@ -1,6 +1,8 @@
 export interface ITrackingLocation {
     latitude: number;
     longitude: number;
-    velocity: number;
-    imei: string;
+    speed: number;
+    imei: number;
+    email: string;
+    statusId: number;
 }

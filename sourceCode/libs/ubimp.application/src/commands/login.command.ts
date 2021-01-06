@@ -2,10 +2,10 @@ import { IsEmail, IsNotEmpty } from 'class-validator';
 
 export class LoginCommand {
 
-    constructor(username: string, password: string, systemId: string) {
+    constructor(username: string, password: string) {
         this.username = username;
         this.password = password;
-        this.systemId = systemId;
+        // this.systemId = systemId;
     }
 
     @IsEmail()
@@ -14,7 +14,7 @@ export class LoginCommand {
     @IsNotEmpty()
     password: string;
 
-    @IsNotEmpty()
-    systemId: string;
+    // @IsNotEmpty()
+    // systemId: string;
 
 }

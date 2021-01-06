@@ -17,8 +17,10 @@ constructor(private ubimpApplication: UbimpApplicationService, private appConfig
 @Cron(new Date(Date.now() + 10 * 1000))
   async handleCron() {
     this.logger.log('Starting tcp server');
-    try  {
-        const result = (await this.ubimpApplication.RunTcpServer(6000).toPromise());
+    try 
+    {
+        const result = (await this.ubimpApplication.RunTcpServer(49371, 8000, 7).toPromise());
+        console.log(result);
 
     } catch (exception) {
         this.logger.error(exception);

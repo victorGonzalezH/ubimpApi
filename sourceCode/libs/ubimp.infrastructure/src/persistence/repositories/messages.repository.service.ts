@@ -8,7 +8,7 @@ import * as mongoose from 'mongoose';
 import { Langs } from 'utils/dist/application/Enums/langs.enum';
 
 @Injectable()
-export class MessagesRepositoryService extends MongoBaseRepository<Messages>  {
+export class MessagesRepository extends MongoBaseRepository<Messages>  {
 
     constructor(@InjectModel('Messages') private readonly messagesModel: Model<Messages & Document>) {
         super(messagesModel);
