@@ -1,6 +1,6 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { IAuthenticatedUser } from 'uba/ubimp.application/models/iAuthenticatedUser.model';
+import { AuthenticatedUserDto } from 'uba/ubimp.application/dataTransferObjects/authenticated-user.dto';
 import * as bcrypt from 'bcrypt';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { SignInCommand } from './signIn.command';
@@ -24,12 +24,13 @@ constructor(private jwtService: JwtService,
  * @param username Nombre de usuario
  * @param password Contrasena
  */
-async validateUser(username: string, password: string, systemId: string): Promise<IAuthenticatedUser> {
+async validateUser(username: string, password: string, systemId: string): Promise<AuthenticatedUserDto> {
 
   const user = await this.ubimpApplication.getUser(username);
   if (user) {
     const compareResult = bcrypt.compareSync(password, user.password);
     if (compareResult === true) {
+
         return { username, id: user._id };
     }
 
@@ -48,10 +49,22 @@ async validateUser(username: string, password: string, systemId: string): Promis
   }
 
   async login(user: any) {
+    
     const payload = { username: user.username, sub: user.userId };
+    const token = this.jwtService.sign(payload);
+    console.log('token')
+    console.log(token);
+    // Se agrega el usuario autenticado a la aplicacion
+    this.ubimpApplication.addAuthenticatedUsers(user.username, token);
+    // Se regresa el token
     return {
-      token: this.jwtService.sign(payload),
+      token
     };
+  }
+
+  
+  async validateToken(token: string): Promise<any> {
+    return this.jwtService.verifyAsync(token)
   }
 
   /**

@@ -24,8 +24,13 @@ export class MessagesRepository extends MongoBaseRepository<Messages>  {
 
         const messages = await this.messagesModel.findOne({ lang: lang as Langs, messages: { $elemMatch: { code } } });
         if (messages != undefined && messages != null && messages.messages != undefined && messages.messages != null && messages.messages.length > 0) {
-            return messages.messages[0];
+            const message = messages.messages.filter( localMessage =>  localMessage.code === code);
+            if(message != undefined && message != null && message.length > 0)
+            {
+                return message[0]
+            }
         }
+
         return null;
     }
 }

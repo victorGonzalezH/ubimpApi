@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core';
-import {WsAdapter} from '@nestjs/platform-ws';
+// import { WsAdapter } from '@nestjs/platform-ws';
+import { IoAdapter } from '@nestjs/platform-socket.io';
 import { UbimpApiModule } from './ubimp.api.module';
 import * as fs from 'fs';
 
@@ -17,7 +18,7 @@ async function bootstrap() {
   const app = await NestFactory.create(UbimpApiModule, {
     httpsOptions,
   });
-
+  // app.useWebSocketAdapter(new IoAdapter(app));
   const appConfigService = app.get<AppConfigService>(AppConfigService);
 
   app.enableCors({
@@ -35,7 +36,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe( {  disableErrorMessages : appConfigService.getDisableErrorMessages() } ));
   app.connectMicroservice({ transport: appConfigService.getMicroserviceProtocol(), options: {  port: appConfigService.getMicroservicePort() } } );
 
-  // app.useWebSocketAdapter(new WsAdapter(app));
+  
   await app.startAllMicroservicesAsync();
   await app.listen(appConfigService.getWebPort());
 }

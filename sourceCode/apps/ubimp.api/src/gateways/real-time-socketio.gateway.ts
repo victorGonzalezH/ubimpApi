@@ -3,7 +3,18 @@ import { Server, Socket } from 'socket.io';
 import { Subject, Observable } from 'rxjs';
 import { UbimpApplicationService } from 'uba/ubimp.application';
 
-@WebSocketGateway()
+@WebSocketGateway({
+   
+  handlePreflightRequest: (request, response) => {
+  response.writeHead(200, 
+    {
+      "Access-Control-Allow-Origin": 'http://localhost:4200', //<-- NO se debe de dejar abierto cualquier origen
+      "Access-Control-Allow-Methods": "GET,POST",
+      'Access-Control-Allow-Headers': 'x-clientid',
+      "Access-Control-Allow-Credentials": true
+  });
+    response.end();
+}, cors: { credentials: false } })
 export class SocketioGateway implements OnGatewayInit, OnGatewayConnection, OnGatewayDisconnect {
 
   /**
@@ -70,7 +81,8 @@ export class SocketioGateway implements OnGatewayInit, OnGatewayConnection, OnGa
    */
   handleConnection(client: Socket, ...args: any[]) {
     this.localClients.push(client);
-
+    console.log(client.handshake.headers['x-clientid']);
+    
   }
 
   /**
@@ -88,6 +100,12 @@ export class SocketioGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   */
   afterInit(server: any) {
     this.localIsInitialized = true;
+
+    server.use((socket, next) => {
+
+      return next();
+
+    });
     // Aqui no es necesario asignar el parametro server a la variable global server ya que se usa el decorador
   }
 

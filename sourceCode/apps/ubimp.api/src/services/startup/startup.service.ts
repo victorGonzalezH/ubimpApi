@@ -9,7 +9,8 @@ export class StartupService {
 
 // private readonly logger = new Logger(StartupService.name);
 
-constructor(private ubimpApplication: UbimpApplicationService, private appConfigService: AppConfigService, private logger: Logger) {
+constructor(private ubimpApplication: UbimpApplicationService,
+    private appConfigService: AppConfigService, private logger: Logger) {
 
 }
 
@@ -20,7 +21,6 @@ constructor(private ubimpApplication: UbimpApplicationService, private appConfig
     try 
     {
         const result = (await this.ubimpApplication.RunTcpServer(49371, 8000, 7).toPromise());
-        console.log(result);
 
     } catch (exception) {
         this.logger.error(exception);

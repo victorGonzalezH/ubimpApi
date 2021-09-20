@@ -1,4 +1,4 @@
-export interface IAuthenticatedUser {
+export interface AuthenticatedUserDto {
 
     username: string;
     id: string;

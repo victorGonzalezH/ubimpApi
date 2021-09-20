@@ -13,7 +13,6 @@ export class NetController {
 @EventPattern('Test', Transport.TCP)
 //Record<string, unknown>
 async handleUserCreated(data: string) {
-
   this.ubimpApp.processTcpDataAndSendToWebClients(data);
 
 }

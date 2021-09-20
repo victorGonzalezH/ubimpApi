@@ -42,10 +42,16 @@ export class AppConfigService {
     private accessTokenLocal: SignOptions;
 
     private smsVerificationCodeLengthLocal: number;
-
+    private jwtSecretLocal;
     constructor(private configService: ConfigService) {
         this.environmentDescription = process.env.NODE_ENV === 'production' ? 'production' : 'development' ;
-        if (this.environmentDescription === 'production') { this.environment = EnvironmentTypes.prod; } else if (this.environmentDescription === 'quality') { this.environment = EnvironmentTypes.qa; } else { this.environment = EnvironmentTypes.dev;}
+        if (this.environmentDescription === 'production') 
+        { this.environment = EnvironmentTypes.prod; 
+            
+        } 
+        else if (this.environmentDescription === 'quality') 
+        { this.environment = EnvironmentTypes.qa; } 
+        else { this.environment = EnvironmentTypes.dev;}
         this.envTag = process.env.NODE_ENV === 'production' ? 'prod' : 'dev' ;
         this.defaultLanguage =  Langs[this.configService.get<string>('defaultLanguage')];
         this.disableErrorMessages = this.envTag === 'prod' ? true : false;
@@ -72,6 +78,7 @@ export class AppConfigService {
         this.activationTokenLocal = this.configService.get<SignOptions>(this.envTag + '.tokens.activation');
         this.accessTokenLocal = this.configService.get<SignOptions>(this.envTag + '.tokens.access');
         this.smsVerificationCodeLengthLocal = this.configService.get<number>('sms_verification_code_length');
+        this.jwtSecretLocal = configService.get<string>(this.envTag + '.jwt.secret');
     }
 
     /**
@@ -181,6 +188,11 @@ export class AppConfigService {
      */
     get smsVerificationCodeLength() {
         return this.smsVerificationCodeLengthLocal;
+    }
+
+    get jwtSecret()
+    {
+        return this.jwtSecretLocal;
     }
 
 }

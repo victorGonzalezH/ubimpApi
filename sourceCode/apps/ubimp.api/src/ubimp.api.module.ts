@@ -4,25 +4,16 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AppController } from './app.controller';
 
-//import { DatabaseConfigService } from './config/databaseConfig.service';
-
-//import { AppConfigService } from './config/appConfig.service';
 
 import { UbimpApplicationModule } from 'uba/ubimp.application';
-import { LanguageSchema, MessageSchema, MessagesSchema, UbimpInfrastructureModule } from '@ubi/ubimp.infrastructure';
-import { UbimpDomainModule, Message, Messages } from '@ubd/ubimp.domain';
-import { ClientProxyFactory } from '@nestjs/microservices';
-// import { RealTimeWebSocketGateway } from './gateways/real-time-web-socket.gateway';
+import { UbimpDomainModule} from '@ubd/ubimp.domain';
+import { UbimpInfrastructureModule, LanguageSchema, MessageSchema, MessagesSchema } from '@ubi/ubimp.infrastructure';
+
+
 import configuration from 'uba/ubimp.application/config/configuration';
 import { DatabaseConfigService } from 'uba/ubimp.application/config/databaseConfig.service';
 import { AppConfigService } from 'uba/ubimp.application/config/appConfig.service';
-import { AuthService } from 'uba/ubimp.application/services/auth/auth.service';
-import { JwtService, JwtModule } from '@nestjs/jwt';
 
-// import { AuthService } from 'uba/ubimp.application/services/auth/auth.service';
-// import { LocalStrategy } from 'uba/ubimp.application/services/auth/local.strategy';
-// import { UserRepositoryService } from '@ubi/ubimp.infrastructure/users/user-repository.service';
-// import { JwtService, JwtModule } from '@nestjs/jwt';
 import { VerifyController } from './controllers/verify/verify.controller';
 import { ActivateController } from './controllers/activate/activate.controller';
 import { StartupService } from './services/startup/startup.service';
@@ -30,6 +21,10 @@ import { NetController } from './controllers/net/net.controller';
 import { DevicesController } from './controllers/devices/devices.controller';
 import { CountrySchema } from '@ubi/ubimp.infrastructure/persistence/schemas/country.schema';
 import { SocketioGateway } from './gateways/real-time-socketio.gateway';
+import { DeviceSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/device.schema';
+import { VehiclesController } from './controllers/vehicles/vehicles.controller';
+import { VehicleSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/vehicle.schema';
+import { VehicleGroupSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/vehicle-group.schema';
 
 
 @Module({
@@ -46,7 +41,12 @@ import { SocketioGateway } from './gateways/real-time-socketio.gateway';
               { name: 'Messages', schema: MessagesSchema },
               { name: 'Language', schema: LanguageSchema },
               { name: 'Country', schema: CountrySchema },
-            ]) ],
-  controllers: [AppController, VerifyController, ActivateController, NetController, DevicesController],
+              { name: 'Device', schema: DeviceSchema },
+              { name: 'Vehicle',  schema: VehicleSchema },
+              { name: 'VehicleGroup',  schema: VehicleGroupSchema },
+            ]) 
+          ],
+  controllers: [AppController, VerifyController, 
+    ActivateController, NetController, DevicesController, VehiclesController],
 })
 export class UbimpApiModule {}

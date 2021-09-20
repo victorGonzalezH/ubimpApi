@@ -11,7 +11,6 @@ export class CountriesRepository extends MongoBaseRepository<Country>  {
         super(countryModel);
     }
 
-
     /**
      * Obtiene un pais por su identificador alterno, aquel que no es el id que asigna la base de datos
      * @param countryId Id alterno

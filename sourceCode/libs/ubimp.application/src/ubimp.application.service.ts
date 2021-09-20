@@ -23,7 +23,6 @@ import { EnvironmentTypes } from 'utils/dist/application/Enums/environmentTypes.
 import { ApplicationMessagesManager } from './services/applicationMessages/applicationMessagesManager.service';
 import { SendEmailCommand } from './commands/sendEmail.command';
 import { CreateOnVerificationUserDto } from './usecases/CreateOnVerificationUser/createOnVerificationUser.dto';
-import { exception } from 'console';
 import { TypesConverter } from 'utils/dist/shared/typesConverter';
 import { VerifyAccountUseCase } from './usecases/verifyAccount/verifyAccountUseCase.service';
 import { ApiResultBaseDto, AppBadRequestException, AppInternalServerError, ApplicationBase, Langs } from 'utils';
@@ -42,6 +41,10 @@ import { CountriesRepository } from '@ubi/ubimp.infrastructure/persistence/repos
 import { stringify } from 'querystring';
 import { SmsTypes } from './usecases/devices/enums/sms-types.enum';
 import * as buffer from 'buffer';
+import { AuthenticatedUser } from './models/authenticated-user.model';
+import { Socket } from 'socket.io';
+
+const MIN_TCP_DATA_LENGTH = 8;
 
 @Injectable()
 export class UbimpApplicationService extends ApplicationBase {
@@ -71,6 +74,7 @@ export class UbimpApplicationService extends ApplicationBase {
         super();
         
         this.locationsEmitter = new Subject<ITrackingLocation>();
+        this.authenticatedUsers = {};
 
     }
 
@@ -93,17 +97,15 @@ export class UbimpApplicationService extends ApplicationBase {
 
     }
 
+
     /**
-     *
-     * @param rawData
+     * 
+     * @param objectWithUsernameProperty 
      */
-    public recieveTcpData(rawData: any) {
-
-    }
-
     private isObjectWithUsernameProperty(objectWithUsernameProperty: VerifyTokenAndAccountResult | { username: string }): objectWithUsernameProperty is { username: string } {
         return (objectWithUsernameProperty as { username: string }).username !== undefined;
       }
+
 
     /**
      * Guarda un usuario, se contruye la plantilla de activacion y se envia el correo de activacion al usuario
@@ -194,9 +196,9 @@ export class UbimpApplicationService extends ApplicationBase {
                                 OnVerificationUserUseCase.SUCCESS_ON_VERIFICATION_USER.code,
                                 signInCommand.lang);
                         } else {
-                            const msg = `code:${ApplicationMessagesManager.ERROR_CREATE_USER.code}, msg: ${ApplicationMessagesManager.ERROR_CREATE_USER.message}, ex: ${exception}`;
+                            const msg = `code:${ApplicationMessagesManager.ERROR_CREATE_USER.code}, msg: ${ApplicationMessagesManager.ERROR_CREATE_USER.message}, ex: ${{}}`;
                             this.logger.error(msg);
-                            return this.generateCustomErrorApiResultBase(exception, 'ERROR_CREATE_USER', ApplicationMessagesManager.ERROR_CREATE_USER.message, ApplicationMessagesManager.ERROR_CREATE_USER.code, signInCommand.lang);
+                            return this.generateCustomErrorApiResultBase({}, 'ERROR_CREATE_USER', ApplicationMessagesManager.ERROR_CREATE_USER.message, ApplicationMessagesManager.ERROR_CREATE_USER.code, signInCommand.lang);
                         }
                     } catch (exception) {
                         const msg = `code:${ApplicationMessagesManager.ERROR_CREATE_USER.code}, msg: ${ApplicationMessagesManager.ERROR_CREATE_USER.message}, ex: ${exception}`;
@@ -315,6 +317,7 @@ export class UbimpApplicationService extends ApplicationBase {
 
     }
 
+
     /**
      * Verifica un token de activiacion y tambien busca y verifica el usuario propietario del id que genero ese token
      * @param verificationToken token de verificacion
@@ -354,6 +357,7 @@ export class UbimpApplicationService extends ApplicationBase {
         }
     }
 
+
     /**
      *
      * @param token
@@ -370,6 +374,7 @@ export class UbimpApplicationService extends ApplicationBase {
             throw exception;
         }
     }
+
 
     /**
      * Verifica que el token sea valido / verify if the token is valid
@@ -414,6 +419,7 @@ export class UbimpApplicationService extends ApplicationBase {
             }
         }
     }
+
 
     /**
      * Activa un usuario que previamente se habia registrado para activacion. Recibe como parametros el token de verificacion para que
@@ -470,6 +476,7 @@ export class UbimpApplicationService extends ApplicationBase {
         }
     }
 
+
     /**
      *
      * @param payload
@@ -479,6 +486,7 @@ export class UbimpApplicationService extends ApplicationBase {
 
         return await this.jwtService.signAsync(payload, signOptions);
     }
+
 
     /**
      * Este metodo construye un objeto ApiResultBase de exito para ser enviado al cliente en respuesta a una solicitud. El objeto
@@ -507,6 +515,7 @@ export class UbimpApplicationService extends ApplicationBase {
         return result;
     }
 
+
     /**
      *
      * @param error
@@ -531,8 +540,9 @@ export class UbimpApplicationService extends ApplicationBase {
 
     }
 
+
     /**
-     *
+     * Envia un correo electronico usando el servicio de infraestructura
      * @param sendEmailCommand comando para enviar un correo
      */
     private sendEmail(sendEmailCommand: SendEmailCommand): Observable<boolean> {
@@ -547,6 +557,7 @@ export class UbimpApplicationService extends ApplicationBase {
         }), catchError(err => throwError(err)));
     }
 
+
     /**
      * Envia un sms
      * @param sendSMSCommand Comando para enviar un sms
@@ -558,12 +569,26 @@ export class UbimpApplicationService extends ApplicationBase {
         .pipe(catchError(err => throwError(err)));
     }
 
+    /**
+     * 
+     * @param logger 
+     * @param code 
+     * @param message 
+     * @param error 
+     */
     private log(logger: Logger, code: number, message: string, error?: any) {
 
         const msg = `code: ${code}, msg: ${message}, err: ${error}`;
         this.logger.error(msg);
     }
 
+
+    /**
+     * 
+     * @param port 
+     * @param forwardPort 
+     * @param messageType 
+     */
     public RunTcpServer(port: number, forwardPort: number, messageType: number): Observable<any> {
         const pattern = { command: 'Net/RunTcpServer' };
         const payload: RunTcpServerCommand = { port, forwardPort, messageType };
@@ -591,16 +616,14 @@ export class UbimpApplicationService extends ApplicationBase {
 
     /**
      *
-     * @param adc Comando para activar el dispositivo
+     * @param adc Comando para activar un dispositivo
      */
     public async activateDevice(adc: ActivateDeviceCommand): Promise<ApiResultBaseDto> {
 
         let userFound = null;
         const lang: Langs = this.converToLanguageFromString(adc.Lang);
-        console.log(lang);
         try {
             
-
             // Se obtiene el usuario
             userFound = await this.getUser(adc.Email);
             // Si se encuentra el usuario
@@ -619,26 +642,34 @@ export class UbimpApplicationService extends ApplicationBase {
                         // Se envia el mensaje a el dispositivo por sms
                         const phoneNumberWithCountryCode = country.phoneCode + adc.PhoneNumber;
                         
-                        // Se envia el mensaje sms
-                        const resultSms = await this.devicesApplication.sendSMS({ message: message, phoneNumber: phoneNumberWithCountryCode, senderId: 'ubimp', smsType: SmsTypes.Transactional }).toPromise();
-
-                        if(resultSms.isSuccess == true || resultSms.IsSuccess === true)
-                        {   // Si el envio del sms es exitoso, entonces se envia el codigo de verificacion generado a el dispositivo en la respuesta
-                            // de la llamada post, con esto el dispositivo leera el sms y buscara el mismo codigo de activacion. Ademas para garantizar
-                            // que se trata del sms que espera tambien leera la marca de tiempo (timestamp) en el sms
-                            return this.generateSuccessApiResultBase(verificationCode, resultSms.applicationMessage, resultSms.resultCode, lang, resultSms.userMessage, resultSms.token);
+                        try 
+                        {
+                            // Se envia el mensaje sms
+                            const resultSms = await this.devicesApplication.sendSMS({ message: message, phoneNumber: phoneNumberWithCountryCode, senderId: 'ubimp', smsType: SmsTypes.Transactional }).toPromise();
+                            if(resultSms.isSuccess == true || resultSms.IsSuccess === true)
+                            {   // Si el envio del sms es exitoso, entonces se envia el codigo de verificacion generado a el dispositivo en la respuesta
+                                // de la llamada post, con esto el dispositivo leera el sms y buscara el mismo codigo de activacion. Ademas para garantizar
+                                // que se trata del sms que espera tambien leera la marca de tiempo (timestamp) en el sms
+                                return this.generateSuccessApiResultBase(verificationCode, resultSms.applicationMessage, resultSms.resultCode, lang, resultSms.userMessage, resultSms.token);
+                            }
+                            else
+                            {
+                                return await this.generateCustomErrorApiResultBase({},
+                                    OnActivateDevice.ERROR_ON_SENDING_SMS_MESSAGE.userMessageCode,
+                                    OnActivateDevice.ERROR_ON_SENDING_SMS_MESSAGE.message,
+                                    OnActivateDevice.ERROR_ON_SENDING_SMS_MESSAGE.code,
+                                    lang, null);
+                            }
                         }
-                        else
+                        catch(exception)
                         {
                             return await this.generateCustomErrorApiResultBase(exception,
-                                OnActivateDevice.ERROR_ON_SENDING_SMS_MESSAGE.userMessageCode,
-                                OnActivateDevice.ERROR_ON_SENDING_SMS_MESSAGE.message,
-                                OnActivateDevice.ERROR_ON_SENDING_SMS_MESSAGE.code,
-                                lang, null);
+                                    OnActivateDevice.ERROR_ON_ACTIVATE_DEVICE_ERROR_ON_SMS_SERVICE .userMessageCode,
+                                    OnActivateDevice.ERROR_ON_ACTIVATE_DEVICE_ERROR_ON_SMS_SERVICE.message,
+                                    OnActivateDevice.ERROR_ON_ACTIVATE_DEVICE_ERROR_ON_SMS_SERVICE.code,
+                                    lang, null);
                         }
-                        
                     } catch (exception) {
-                        console.log(exception);
                         return await this.generateCustomErrorApiResultBase(exception,
                             OnActivateDevice.ERROR_ON_GETTING_COUNTRY.userMessageCode,
                             OnActivateDevice.ERROR_ON_GETTING_COUNTRY.message,
@@ -663,6 +694,7 @@ export class UbimpApplicationService extends ApplicationBase {
     }
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+
     instanceOfApiResulBaseDto(object: any): object is ApiResultBaseDto {
         return 'data' in object &&
         'error' in object &&
@@ -672,24 +704,7 @@ export class UbimpApplicationService extends ApplicationBase {
         'token' in object &&
         'resultCode' in object;
     }
-
-
-    /**
-     * Convierta una cadena en Lang
-     * @param langParameter Lenguaje en cadena
-     */
-    converToLanguageFromString(langParameter: string): Langs {
-
-        const lang: Langs = langParameter as Langs;
-        if( lang == undefined || lang == null )
-        {
-            return Langs.es_MX;
-        }
-
-        return lang;
-
-    }
-
+    
 
     /**
      * Procesa los datos tcp retransmitidos por el servidor (el que se configuro para escuchar los mensajes previamente)
@@ -703,22 +718,24 @@ export class UbimpApplicationService extends ApplicationBase {
         // Se obtiene el buffer de bytes a partir de la cadena data
         let dataBuffer: Buffer = buffer.Buffer.from(data, 'base64' );
         let imei = this.getDoubleFromByteArray(data, 0, 8, 'base64', true);
+        
+        // Aqui se obtiene el usuario al que pertenece este dispositivo con este imei
+        const email   = 'victor.gonzalez.hernandez.10@gmail.com';
+        // Aqui se debe obtener/calcular el statusId del dispositivo
+        const statusId = 1;
+        
+        let location : ITrackingLocation = { imei, email, statusId };
+        
+        if(dataBuffer.length > MIN_TCP_DATA_LENGTH) {
 
-        if(dataBuffer.length == 28) {
-
-            let latitude  = this.getDoubleFromByteArray(data, 8, 16, 'base64', true);
-            let longitude = this.getDoubleFromByteArray(data, 16, 24, 'base64', true);
-            let speed     = this.getFloatFromByteArray(data, 24, 28, 'base64', true);
-            
-            // Aqui se obtiene el usuario al que pertenece este dispositivo con este imei
-            const email   = 'victor.gonzalez.hernandez.10@gmail.com';
-            // Aqui se debe obtener/calcular el statusId del dispositivo
-            const statusId = 1;
-            
-            let location : ITrackingLocation = { imei, latitude, longitude, speed, email, statusId };
-            
-            this.locationsEmitter.next(location);
+            let operationType   = this.getByteFromByteArray(data, 8, 9, 'base64', true);
+            let latitude        = this.getDoubleFromByteArray(data, 9, 17, 'base64', true);
+            let longitude       = this.getDoubleFromByteArray(data, 17, 25, 'base64', true);
+            let speed           = this.getFloatFromByteArray(data, 25, 29, 'base64', true);
+            location = { imei, latitude, longitude, speed, email, statusId };
         }
+        console.log(location);
+        this.locationsEmitter.next(location);
 
 }
 
@@ -769,4 +786,75 @@ export class UbimpApplicationService extends ApplicationBase {
 
     }
 
+    /**
+     * 
+     * @param data 
+     * @param start 
+     * @param end 
+     * @param dataCoding 
+     * @param isBigEndian 
+     */
+    private getByteFromByteArray(data: string, start: number, end: number, dataCoding: BufferEncoding = 'base64', isBigEndian: boolean = true ): number {
+
+        let dataBuffer: Buffer = buffer.Buffer.from(data, dataCoding);
+        let dataSubBuffer = dataBuffer.slice(start, end);
+        if(isBigEndian == true)
+        {
+            return dataSubBuffer.readInt8(0)
+        }
+        else
+        {
+            return dataSubBuffer.readInt8(0)
+        }
+
+    }
+
+    
+    /**
+     * Registro de usuarios autenticados
+     */
+    private authenticatedUsers: Record<string, AuthenticatedUser>;
+
+
+    /**
+     * Agrega un usuario
+     * @param username 
+     * @param token 
+     */
+    public addAuthenticatedUsers(username: string, token: string): boolean {
+        
+        if(this.authenticatedUsers[token] != undefined ) {
+            const authenticatedUser = this.authenticatedUsers[token];
+            authenticatedUser.loginCount++;
+        } else {
+
+            this.authenticatedUsers[token] = { devices: [], loginCount: 1, username };
+        }
+        
+        
+        return true;
+    }
+
+
+    /**
+     * 
+     * @param token Token para obtener el usuario
+     */
+    public getAuthenticatedUser(token: string) {
+        return this.authenticatedUsers[token];
+    }
+
+
+    /**
+     * Agrega un socket (cliente socket) a un usuario autenticado
+     * @param socket socket cliente
+     * @param token token del usuario autenticado
+     */
+    public attachSocketToAuthenticatedToUser(socket: Socket, token: string) {
+
+        if(this.authenticatedUsers[token] != undefined ) {
+            const authenticatedUser = this.authenticatedUsers[token];
+            authenticatedUser.socketClient = socket;
+        }
+    }
 }
