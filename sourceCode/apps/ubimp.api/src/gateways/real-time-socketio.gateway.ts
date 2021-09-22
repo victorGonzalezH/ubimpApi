@@ -81,7 +81,7 @@ export class SocketioGateway implements OnGatewayInit, OnGatewayConnection, OnGa
    */
   handleConnection(client: Socket, ...args: any[]) {
     this.localClients.push(client);
-    console.log(client.handshake.headers['x-clientid']);
+    // console.log(client.handshake.headers['x-clientid']);
     
   }
 
