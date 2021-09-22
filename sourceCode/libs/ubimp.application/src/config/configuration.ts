@@ -5,6 +5,9 @@ export default () => ({
     dev: {
         passwordSaltRounds: process.env.DEV_PASSWORD_SALT_ROUNDS,
         environmentname: process.env.DEV_ENV_NAME,
+        jwt: {
+            secret: process.env.DEV_JWT_SECRET,
+        },
         web: {
             protocol: process.env.DEV_WEB_PROTOCOL,
             host: process.env.DEV_WEB_HOST,

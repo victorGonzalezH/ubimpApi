@@ -7,6 +7,7 @@ import { AppConfigService } from 'uba/ubimp.application/config/appConfig.service
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(appConfigService: AppConfigService) {
+    console.log(appConfigService.jwtSecret);
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,

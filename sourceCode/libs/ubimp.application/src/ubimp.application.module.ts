@@ -25,6 +25,7 @@ import { VehicleGroupRepository } from '@ubi/ubimp.infrastructure/persistence/re
 import { VehiclesRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/vehicle-repository/vehicles-repository.service';
 import { VehicleSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/vehicle.schema';
 import { VehiclesApplication } from './services/vehicle/vehicle.service';
+import { JwtStrategy } from './services/auth/jwt.strategy';
 
 /**
  * Resuelve el jwt secret de acuerdo al ambiente en que se
@@ -45,7 +46,7 @@ const ResolveJWTSecret = async() => {
 
 @Module({
   providers: [UbimpApplicationService, LocalStrategy, AuthService,
-    AppConfigService, ConfigService,
+    AppConfigService, ConfigService, JwtStrategy,
     {
       provide: 'USERS_SERVICE',
       useFactory: (appConfigService: AppConfigService) => {
