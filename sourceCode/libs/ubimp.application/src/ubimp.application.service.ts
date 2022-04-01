@@ -4,8 +4,6 @@ import { catchError, concatMap, map } from 'rxjs/operators';
 import { ITrackingLocation } from './dataTransferObjects/socketio/itrackingLocation.model';
 import { ClientProxy } from '@nestjs/microservices';
 import { SignInCommand } from './services/auth/signIn.command';
-import { AppConfigService } from './config/appConfig.service';
-import { MessagesRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/messages.repository.service';
 import { TemplatesManager } from './services/templates/templatesManager.service';
 import { TemplatesTypes } from './services/templates/templatesTypes.enum';
 import { Message } from '@ubd/ubimp.domain';
@@ -18,36 +16,31 @@ import { UserStatus } from './usecases/CreateOnVerificationUser/userStatus.enum'
 import { SignOptions } from 'jsonwebtoken';
 import { OnVerificationUserUseCase } from './usecases/CreateOnVerificationUser/onVerificationUserUseCase.service';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-import { ApiResultBase } from 'utils/dist/application/dataTransferObjects/apiResultBase.model';
-import { EnvironmentTypes } from 'utils/dist/application/Enums/environmentTypes.enum';
+import { ApiResultBase } from 'utils';
 import { ApplicationMessagesManager } from './services/applicationMessages/applicationMessagesManager.service';
 import { SendEmailCommand } from './commands/sendEmail.command';
 import { CreateOnVerificationUserDto } from './usecases/CreateOnVerificationUser/createOnVerificationUser.dto';
-import { TypesConverter } from 'utils/dist/shared/typesConverter';
+import { TypesConverter } from 'utils';
 import { VerifyAccountUseCase } from './usecases/verifyAccount/verifyAccountUseCase.service';
 import { ApiResultBaseDto, AppBadRequestException, AppInternalServerError, ApplicationBase, Langs } from 'utils';
 import { VerifyTokenAndAccountResult } from './usecases/verifyAccount/verifyTokenAndAccountResult.enum';
 import { RunTcpServerCommand } from './commands/runTcpServer.command';
 import { LanguageRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/language.repository.service';
-import { LanguageDto } from './dataTransferObjects/languageDto.model';
-import { Language } from '@ubd/ubimp.domain/models/language.model';
 import { CountryDto } from './usecases/devices/dtos/country.model';
 import { DevicesApplication } from './usecases/devices/devices.application.service';
-import { ActivateDeviceCommand } from './usecases/devices/commands/activate-device.command';
-import { NumbersGenerator } from 'utils/dist/shared/numbers-generator.service';
 import { SendSMSCommand } from './usecases/devices/commands/send-sms.command';
-import { OnActivateDevice } from './usecases/devices/on-activate-device.case';
 import { CountriesRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/countries-repository/countries-repository.service';
-import { stringify } from 'querystring';
-import { SmsTypes } from './usecases/devices/enums/sms-types.enum';
 import * as buffer from 'buffer';
 import { AuthenticatedUser } from './models/authenticated-user.model';
 import { Socket } from 'socket.io';
+import { ApplicationBaseService } from './application-base.service';
+import { AppConfigService } from './config/appConfig.service';
+import { MessagesRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/messages.repository.service';
 
 const MIN_TCP_DATA_LENGTH = 8;
 
 @Injectable()
-export class UbimpApplicationService extends ApplicationBase {
+export class UbimpApplicationService extends ApplicationBaseService {
 
      /**
      * Subject para emitir los valores recibidos de los clientes tcp como valores tipo ITrackingLocation
@@ -62,39 +55,19 @@ export class UbimpApplicationService extends ApplicationBase {
     }
 
     constructor(@Inject('INFRASTRUCTURE_SERVICE') private infrastructureClient: ClientProxy,
-                @Inject('USERS_SERVICE') private usersClient: ClientProxy,
                 @Inject('TEMPLATES_SERVICE') private templatesManager: TemplatesManager,
+                @Inject('USERS_SERVICE') usersClient: ClientProxy,
                 @Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger,
                 private jwtService: JwtService,
-                private appConfigService: AppConfigService,
-                private messagesRepository: MessagesRepository,
+                appConfigService: AppConfigService,
+                messagesRepository: MessagesRepository,
                 private languagesRepository: LanguageRepository,
                 private countriesRepository: CountriesRepository,
                 private devicesApplication: DevicesApplication) {
-        super();
+        super(appConfigService, messagesRepository, usersClient);
         
         this.locationsEmitter = new Subject<ITrackingLocation>();
         this.authenticatedUsers = {};
-
-    }
-
-    /**
-     * Obtiene un usuario desde el microserservicio de usuarios.
-     * Devuelve el objeto usuario tal cual
-     */
-    public async getUser(username: string): Promise<any> {
-        const pattern = { command: 'getByUsername' };
-        const getUserByNamePayLoad = { username, systemId: this.appConfigService.getSystemId(), callSource: CallSources.Microservice };
-
-        try {
-            // Se hace la llamada al servicio de usuarios para obtener el usuario
-            const result = await this.usersClient.send(pattern, getUserByNamePayLoad).toPromise();
-            return result;
-        } catch (exception)  {
-            throw exception;
-            // return new AppInternalServerError();
-        }
-
     }
 
 
@@ -319,7 +292,7 @@ export class UbimpApplicationService extends ApplicationBase {
 
 
     /**
-     * Verifica un token de activiacion y tambien busca y verifica el usuario propietario del id que genero ese token
+     * Verifica un token de activacion y tambien busca y verifica el usuario propietario del id que genero ese token
      * @param verificationToken token de verificacion
      */
     private async verifyTokenAndAccount(verificationToken: any): Promise<VerifyTokenAndAccountResult | { username: string }> {
@@ -488,58 +461,6 @@ export class UbimpApplicationService extends ApplicationBase {
     }
 
 
-    /**
-     * Este metodo construye un objeto ApiResultBase de exito para ser enviado al cliente en respuesta a una solicitud. El objeto
-     * erro de ApiResultBase es nulo. El mensaje de la aplicacion (applicationMessage) solo sera asignara cuando el sistema se
-     * ejecute en un ambiente no productivo. El codigo del resultado (resultCode) siempre se enviara. La bandera success se establece
-     * a verdadero
-     * @param data objeto dto que se devuelve al cliente
-     * @param userMessageCode codigo del mensaje que se buscara en la base de datos para mostrarselo al usuario
-     * @param applicationMessage mensaje de aplicacion (para uso interno)
-     * @param resultCode codigo del resultado
-     * @param lang lenguaje del mensaje al usuario
-     */
-    private async generateCustomSuccessApiResultBase(data: any, userMessageCode: string = '', applicationMessage: string, resultCode: number, lang: Langs = this.appConfigService.getDefaultLanguage(), token: string = null): Promise<ApiResultBaseDto> {
-        const userMessage: Message = userMessageCode !== '' ? await this.messagesRepository.getMessageByLanguageAndCode(lang, userMessageCode) : null;
-        const result: ApiResultBaseDto = {
-
-            data,
-            isSuccess: true,
-            applicationMessage: this.appConfigService.getEnvironment() !== EnvironmentTypes.prod ? applicationMessage : ApiResultBase.SUCCESS,
-            resultCode,
-            userMessage: userMessage != null && userMessage != undefined ? userMessage.value : ApiResultBase.SUCCESS,
-            error: null,
-            token,
-        };
-
-        return result;
-    }
-
-
-    /**
-     *
-     * @param error
-     * @param userMessageCode
-     * @param applicationMessage
-     * @param resultCode
-     * @param lang
-     */
-    private async generateCustomErrorApiResultBase(error: any, userMessageCode: string, applicationMessage: string, resultCode: number, lang: Langs = this.appConfigService.getDefaultLanguage(), token: string = null): Promise<ApiResultBaseDto> {
-        const userMessage: Message = await this.messagesRepository.getMessageByLanguageAndCode(lang, userMessageCode);
-        const result: ApiResultBaseDto = {
-            error: this.appConfigService.getEnvironment() !== EnvironmentTypes.prod ? error : ApiResultBase.ERROR,
-            applicationMessage: this.appConfigService.getEnvironment() !== EnvironmentTypes.prod ? applicationMessage : ApiResultBase.ERROR,
-            data: null,
-            isSuccess: false,
-            resultCode,
-            userMessage: userMessage != null && userMessage != undefined ? userMessage.value : ApiResultBase.ERROR,
-            token,
-        };
-
-        return result;
-
-    }
-
 
     /**
      * Envia un correo electronico usando el servicio de infraestructura
@@ -614,84 +535,7 @@ export class UbimpApplicationService extends ApplicationBase {
 
     }
 
-    /**
-     *
-     * @param adc Comando para activar un dispositivo
-     */
-    public async activateDevice(adc: ActivateDeviceCommand): Promise<ApiResultBaseDto> {
-
-        let userFound = null;
-        const lang: Langs = this.converToLanguageFromString(adc.Lang);
-        try {
-            
-            // Se obtiene el usuario
-            userFound = await this.getUser(adc.Email);
-            // Si se encuentra el usuario
-            if (userFound != null) {
-                // Se verifica que la contrasena sea la correcta
-                if (bcrypt.compareSync(adc.Password, userFound.password) === true) {
-                    // Genera el codigo de verificacion
-                    const verificationCode = NumbersGenerator.getVerificationCode(this.appConfigService.smsVerificationCodeLength, { type: 'string' });
-
-                    try {
-                        // Se obtiene el pais de acuerdo al countryId del comando
-                        const country = await this.countriesRepository.getByCountryId(Number(adc.CountryId));
-                        // se forma el mensaje que consta del sello de tiempo que envio el dispositivo y
-                        // el codigo de verificacion que se genero
-                        const message = adc.TimeStamp + ' ' + verificationCode;
-                        // Se envia el mensaje a el dispositivo por sms
-                        const phoneNumberWithCountryCode = country.phoneCode + adc.PhoneNumber;
-                        
-                        try 
-                        {
-                            // Se envia el mensaje sms
-                            const resultSms = await this.devicesApplication.sendSMS({ message: message, phoneNumber: phoneNumberWithCountryCode, senderId: 'ubimp', smsType: SmsTypes.Transactional }).toPromise();
-                            if(resultSms.isSuccess == true || resultSms.IsSuccess === true)
-                            {   // Si el envio del sms es exitoso, entonces se envia el codigo de verificacion generado a el dispositivo en la respuesta
-                                // de la llamada post, con esto el dispositivo leera el sms y buscara el mismo codigo de activacion. Ademas para garantizar
-                                // que se trata del sms que espera tambien leera la marca de tiempo (timestamp) en el sms
-                                return this.generateSuccessApiResultBase(verificationCode, resultSms.applicationMessage, resultSms.resultCode, lang, resultSms.userMessage, resultSms.token);
-                            }
-                            else
-                            {
-                                return await this.generateCustomErrorApiResultBase({},
-                                    OnActivateDevice.ERROR_ON_SENDING_SMS_MESSAGE.userMessageCode,
-                                    OnActivateDevice.ERROR_ON_SENDING_SMS_MESSAGE.message,
-                                    OnActivateDevice.ERROR_ON_SENDING_SMS_MESSAGE.code,
-                                    lang, null);
-                            }
-                        }
-                        catch(exception)
-                        {
-                            return await this.generateCustomErrorApiResultBase(exception,
-                                    OnActivateDevice.ERROR_ON_ACTIVATE_DEVICE_ERROR_ON_SMS_SERVICE .userMessageCode,
-                                    OnActivateDevice.ERROR_ON_ACTIVATE_DEVICE_ERROR_ON_SMS_SERVICE.message,
-                                    OnActivateDevice.ERROR_ON_ACTIVATE_DEVICE_ERROR_ON_SMS_SERVICE.code,
-                                    lang, null);
-                        }
-                    } catch (exception) {
-                        return await this.generateCustomErrorApiResultBase(exception,
-                            OnActivateDevice.ERROR_ON_GETTING_COUNTRY.userMessageCode,
-                            OnActivateDevice.ERROR_ON_GETTING_COUNTRY.message,
-                            OnActivateDevice.ERROR_ON_GETTING_COUNTRY.code,
-                            Langs.es_MX, null);
-                    }
-
-                } else {
-                    return this.generateErrorApiResultBase({message: 'Please verify email and/or password'}, '', 1, 'Please verify email and/or password', null);
-                }
-
-              }
-
-        } catch (exception) {
-            return await this.generateCustomErrorApiResultBase(exception,
-                OnActivateDevice.ERROR_ON_USER_SERVICE.userMessageCode,
-                OnActivateDevice.ERROR_ON_USER_SERVICE.message,
-                OnActivateDevice.ERROR_ON_USER_SERVICE.code,
-                lang, null);
-        }
-        
-    }
+    
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 

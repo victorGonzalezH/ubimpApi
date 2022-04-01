@@ -23,7 +23,7 @@ export class DevicesController {
   @Post('activate')
   async sigIn(@Body() activateDeviceCommand: ActivateDeviceCommand): Promise<ApiResultBaseDto> {
 
-    return await this.ubimpApp.activateDevice(activateDeviceCommand);
+    return await this.deviceApplication.activateDevice(activateDeviceCommand);
   }
 
   /**
