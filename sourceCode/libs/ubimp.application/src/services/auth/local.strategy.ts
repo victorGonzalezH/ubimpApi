@@ -6,6 +6,7 @@ import { AppConfigService } from 'uba/ubimp.application/config/appConfig.service
 import { LoginCommand } from 'uba/ubimp.application/commands/login.command';
 import {validate } from 'class-validator';
 import { RpcException } from '@nestjs/microservices';
+import { ValidatedUserDto } from 'uba/ubimp.application/dataTransferObjects/validated-user-dto.model';
 
 @Injectable()
 export class LocalStrategy extends PassportStrategy(Strategy) {
@@ -20,7 +21,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
    * @param username nombre de usuario
    * @param password contrasena
    */
-  async validate(req: any, username: string, password: string): Promise<any> {
+  async validate(req: any, username: string, password: string): Promise<ValidatedUserDto> {
   try {
     // const systemId: string = req.body.systemId;
     const loginCommand = new LoginCommand(username, password);
@@ -32,7 +33,7 @@ export class LocalStrategy extends PassportStrategy(Strategy) {
       throw new HttpException('Bad Request', HttpStatus.BAD_REQUEST);
     }
 
-    const user = await this.authService.validateUser(username, password, this.appConfigService.getSystemId());
+    const user: ValidatedUserDto = await this.authService.validateUser(username, password, this.appConfigService.getSystemId());
     
     if (!user) {
       throw new UnauthorizedException();
