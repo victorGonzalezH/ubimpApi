@@ -7,7 +7,7 @@ import { throwError } from 'rxjs/internal/observable/throwError';
 import { catchError, map } from 'rxjs/operators';
 import { AppConfigService } from 'uba/ubimp.application/config/appConfig.service';
 import { CallSources } from 'uba/ubimp.application/enums/callSources.enum';
-import { ApiResultBase, ApiResultBaseDto, ApplicationBase, Langs, NumbersGenerator } from 'utils';
+import { ApiResultBase, ApiResultBaseDto, AppBadRequestException, AppInternalServerError, ApplicationBase, DataTypes, Langs, NumbersGenerator } from 'utils';
 import { ActivateDeviceCommand } from './commands/activate-device.command';
 import { ConfirmSmsArrivedCommand } from './commands/confirm-sms-arrived.command';
 import { SendSMSCommand } from './commands/send-sms.command';
@@ -17,19 +17,25 @@ import { SmsTypes } from './enums/sms-types.enum';
 import { ApplicationBaseService } from 'uba/ubimp.application/application-base.service';
 import { MessagesRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/messages.repository.service';
 import { CountriesRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/countries-repository/countries-repository.service';
+import { bool } from 'aws-sdk/clients/signer';
+import { DeviceDto } from './dtos/device.dto';
+import { User } from '@ubd/ubimp.domain/models/user.model';
+import { UserStatus } from '../CreateOnVerificationUser/userStatus.enum';
+import { OnGettingDevices } from './on-getting-devices.case';
+import { UpdateDeviceCommand } from './commands/update-device-command';
 
 @Injectable()
 export class DevicesApplication extends ApplicationBaseService {
 
     constructor(
-        @Inject('INFRASTRUCTURE_SERVICE') private infrastructureClient: ClientProxy,
-        @Inject('USERS_SERVICE') usersClient: ClientProxy,
-        private devicesRepository: DevicesRepository,
-        appConfigService: AppConfigService,
         messagesRepository: MessagesRepository,
-        private countriesRepository: CountriesRepository
+        appConfigService: AppConfigService,
+        @Inject('USERS_SERVICE') usersClient: ClientProxy,
+        private countriesRepository: CountriesRepository,
+        private devicesRepository: DevicesRepository,
+        @Inject('INFRASTRUCTURE_SERVICE') private infrastructureClient: ClientProxy
     ) {
-        super(appConfigService, messagesRepository, usersClient);
+        super(messagesRepository, appConfigService, usersClient);
     }
 
     /**
@@ -61,7 +67,6 @@ export class DevicesApplication extends ApplicationBaseService {
 
         //Se obtiene el usuario
         const userFound = await this.usersClient.send(pattern, getUserByNamePayLoad).toPromise();
-        console.log(userFound);
         // El usuario debe de estar creado para para poder crearlo o actualizarlo
         if (userFound != null && userFound != undefined)
         {
@@ -74,9 +79,7 @@ export class DevicesApplication extends ApplicationBaseService {
                 newDevice.addPhoneNumber(confirmSmsArrivedCommand.PhoneNumber);
                 newDevice.addUser(userFound._id);
                 newDevice.imei = confirmSmsArrivedCommand.Imei;
-                console.log(newDevice);
                 const savedDevice = await this.devicesRepository.save(newDevice);
-                console.log(savedDevice);
                 return this.generateSuccessApiResultBase({id: savedDevice.id}, OnActivateDevice.SUCCESS_ON_ACTIVATE_DEVICE.message, OnActivateDevice.SUCCESS_ON_ACTIVATE_DEVICE.code, lang, OnActivateDevice.SUCCESS_ON_ACTIVATE_DEVICE.userMessageCode);
             } else { //El dispositivo ya existe, entonces es posible que se este registrando con un
                      // numero diferente
@@ -182,4 +185,140 @@ export class DevicesApplication extends ApplicationBaseService {
         }
         
     }
+
+    /**
+     * 
+     * @param imei imei
+     * @returns The device with the specified imei
+     */
+    public async getDeviceByImei(imei: string) : Promise<Device> {
+        const filter = { imei: imei };
+        const result = await this.devicesRepository.getAllByFilter(filter);
+        return result.length > 0 ? result[0] as Device: null;
+    }
+
+
+    /**
+     * Gets devices that are assigned or not
+     * @param assigned flag that indicates if the devices are asissigned or not
+     * @returns 
+     */
+    public async getDevicesAssigned(assigned: bool) {
+        const filter = { isAssigned: assigned };
+        const devices = await this.devicesRepository.getAllByFilter(filter);
+        return await this.generateSuccessApiResultBase(devices, ApiResultBase.SUCCESS, ApiResultBase.SUCCESS_CODE, null, ApiResultBase.SUCCESS, null);
+        
+    }
+    
+
+    /**
+     * 
+     * @param properties 
+     * @returns 
+     */
+    public async getDevicesByProperties(properties: Array<{ name: string, value: string }>, langParam: string): Promise<ApiResultBaseDto> {
+        try {
+            const lang = langParam as Langs;
+            const filter = {};
+            const device: Device = new Device();
+            
+            // Here we define the allowed properties that can be used to query the entities
+            // its important that at the constructor of the model we set this properties to a 
+            //initial value
+            
+            const props:(keyof Device)[] = [ 'isAssigned', 'imei', 'currentOwnerId' ];
+            for(let i = 0; i < properties.length; i++) {
+                let propertyName = properties[i].name;
+                let propertyValue = properties[i].value;
+
+                if (properties[i].name === 'username') {
+                    propertyName = 'currentOwnerId';
+                    // buscar el usuario
+                    const pattern = { command: 'getByUsername' };
+                    const getUserByNamePayLoad = { username: properties[i].value, systemId: this.appConfigService.getSystemId(), callSource: CallSources.Microservice };
+                    
+                    let userFound: User = null;
+                    try  {
+                        
+                        // Se hace la llamada al servicio de usuarios para obtener el usuario
+                        userFound = await this.usersClient.send(pattern, getUserByNamePayLoad).toPromise();
+                        if (userFound != null && userFound != undefined) {
+                            if(userFound.userStatus === UserStatus.Activated) {
+                                // We have to check if this is an owner or a extended user, this is done
+                                //by checking the ownerId property, if it is null is a owner user
+                                if(userFound.ownerId == null) { // Si es nulo entonces es un usuario dueno
+                                    propertyValue = userFound._id;
+                                } else { 
+                                        
+                                    // no es un usuario dueno, entonces si usa su ownerId para obtener el
+                                    // usuario dueno
+                                    const ownerUser: User = await this.getUserById(userFound.ownerId);
+                                    if(ownerUser != null && ownerUser != undefined) {
+                                        if(userFound.userStatus === UserStatus.Activated) {
+                                            propertyValue = ownerUser._id;
+                                        } else {
+                                            const error = new AppInternalServerError(OnGettingDevices.ERROR_USER_NOT_ACTIVE_ON_GETTING_DEVICES.message);
+                                            return this.generateCustomErrorApiResultBase(error, OnGettingDevices.ERROR_USER_NOT_ACTIVE_ON_GETTING_DEVICES.userMessageCode, OnGettingDevices.ERROR_USER_NOT_ACTIVE_ON_GETTING_DEVICES.message, OnGettingDevices.ERROR_USER_NOT_ACTIVE_ON_GETTING_DEVICES.code, lang);
+                                        }
+                                    } 
+                                        else {
+                                            const error = new AppInternalServerError(OnGettingDevices.ERROR_USER_NOT_FOUND_ON_GETTING_DEVICES.message);
+                                            return this.generateCustomErrorApiResultBase(error, OnGettingDevices.ERROR_USER_NOT_FOUND_ON_GETTING_DEVICES.userMessageCode, OnGettingDevices.ERROR_USER_NOT_FOUND_ON_GETTING_DEVICES.message, OnGettingDevices.ERROR_USER_NOT_FOUND_ON_GETTING_DEVICES.code, lang);
+                                    }
+                                }
+                                
+                            } 
+                            else {
+                                const error = new AppInternalServerError(OnGettingDevices.ERROR_USER_NOT_ACTIVE_ON_GETTING_DEVICES.message);
+                                return this.generateCustomErrorApiResultBase(error, OnGettingDevices.ERROR_USER_NOT_ACTIVE_ON_GETTING_DEVICES.userMessageCode, OnGettingDevices.ERROR_USER_NOT_ACTIVE_ON_GETTING_DEVICES.message, OnGettingDevices.ERROR_USER_NOT_ACTIVE_ON_GETTING_DEVICES.code, lang);
+                            }
+                        
+                        } else {
+                            const error = new AppInternalServerError(OnGettingDevices.ERROR_USER_NOT_FOUND_ON_GETTING_DEVICES.message);
+                            return this.generateCustomErrorApiResultBase(error, OnGettingDevices.ERROR_USER_NOT_FOUND_ON_GETTING_DEVICES.userMessageCode, OnGettingDevices.ERROR_USER_NOT_FOUND_ON_GETTING_DEVICES.message, OnGettingDevices.ERROR_USER_NOT_FOUND_ON_GETTING_DEVICES.code, lang);
+                        }
+                    } catch (exception)  {
+
+                        return this.generateCustomErrorApiResultBase(exception, OnGettingDevices.ERROR_UNKNOW_ON_GETTING_DEVICES.userMessageCode, OnGettingDevices.ERROR_UNKNOW_ON_GETTING_DEVICES.message, OnGettingDevices.ERROR_UNKNOW_ON_GETTING_DEVICES.code, lang);
+                    }
+                } 
+
+                const property = props.filter(item => item === propertyName)[0];
+                if(property !== undefined) {    
+                    filter[propertyName] = this.fromStringToPrimitive(typeof device[property], propertyValue);
+                }
+                else {
+                    throw new AppBadRequestException();
+                }
+            }
+
+            const devices = await this.devicesRepository.getAllByFilter(filter);
+            
+            const devicesDtos: DeviceDto[] = devices.map(item => {
+                const deviceDto :DeviceDto = { imei: item.imei, id: item._id };
+                return deviceDto;
+              });
+              
+            return this.generateSuccessApiResultBase(devicesDtos, ApiResultBase.SUCCESS, ApiResultBase.SUCCESS_CODE, null, ApiResultBase.SUCCESS, null);
+    }
+        catch(error) {
+            throw error;
+        }
+    }
+
+
+
+
+    public async updateVehicle(imei: string, updateDeviceCommnand: UpdateDeviceCommand): Promise<ApiResultBaseDto> {
+
+        try 
+        {
+            return null;
+        } 
+        catch(exception) {
+
+        }
+        
+    }
+
 }

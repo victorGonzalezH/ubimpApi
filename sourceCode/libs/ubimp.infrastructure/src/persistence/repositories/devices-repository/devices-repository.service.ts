@@ -9,6 +9,9 @@ export class DevicesRepository extends MongoBaseRepository<Device> {
 
     constructor(@InjectModel('Device') private readonly deviceModel: Model<Device & Document>) {
         super(deviceModel);
+        // super(deviceModel, [
+        //     { name: 'getLastPhoneNumber', method: Device.prototype.getLastPhoneNumber }
+        // ] );
     }
 
     /**

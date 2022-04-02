@@ -1,7 +1,7 @@
 import * as mongoose from 'mongoose';
 
 // id. Mongo se encarga de agregar la propiedad _id
-export const DeviceSchema = new mongoose.Schema({
+const DeviceSchema = new mongoose.Schema({
     
     /**
      * Imei del dispositivo
@@ -13,11 +13,11 @@ export const DeviceSchema = new mongoose.Schema({
      */
      phoneNumbers: { type: [String], required: false },
 
-       /**
-     * Indica si el ultimo numero en el listado de nuemeros telefonicos es el actual que usa
-     * el dispositivo
+
+    /**
+     * 
      */
-     lastPhoneNumberIsTheCurrentOne: {type: Boolean,required: true },
+     currentPhoneNumber: {type: String, required: true },
 
      /**
       * Usuarios que ha tenido el dispositivo incluyendo el actual
@@ -26,10 +26,26 @@ export const DeviceSchema = new mongoose.Schema({
 
      
      /**
-     * Indica si el ultimo usuario en el listado de usuarios es el actual usuario "dueño" del
-     * dispositivo
-     */
-     lastUserIsTheCurrentOne : { type: Boolean, required: true },
+      * 
+      */
+     currentOwnerId : { type: String, required: true },
 
+
+     /**
+      * Indicates if the device is assigned 
+      */
+     isAssigned: { type: Boolean, required: true },
 
 });
+
+
+DeviceSchema.methods.getLastOwnerId = async function() {
+
+  if(this.users != null && this.users != undefined && this.users.length > 0)
+  {
+      return this.users[this.users.length - 1];
+  }
+    return null;
+  };
+
+export { DeviceSchema };
