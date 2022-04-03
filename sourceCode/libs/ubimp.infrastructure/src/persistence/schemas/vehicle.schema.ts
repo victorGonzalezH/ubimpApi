@@ -1,7 +1,9 @@
 import * as mongoose from 'mongoose';
 
-// id. Mongo se encarga de agregar la propiedad _id
+
 export const VehicleSchema = new mongoose.Schema({
+
+    // id. Mongo se encarga de agregar la propiedad _id
     
     /**
      * Nombre del vehiculo u objeto
@@ -11,23 +13,23 @@ export const VehicleSchema = new mongoose.Schema({
     /**
      * Identificador del usuario dueno del vehiculo
      */
-    userId: { type: String, required: true },
-    
-    /**
-     * Grupo al que pertenece el vehiculo
-     */
-    groupId: { type: String, required: true },
+     ownerId: { type: String, required: true },
 
     /**
-     * Icono del vehiculo
+     * Device id
      */
-    icon: { type: String, required: true },
-    
-    /**
-     * Identificador de la marca
-     */
-    brandId: { type: String, required: false },
+     deviceId : { type: String, required: true },
 
+     /**
+      * Object type Id
+      */
+    objectTypeId: { type: String, required: true },
+
+    /**
+     * Brand Id
+     */
+    brandId: {type: String, required: false },
+    
     /**
      * Identificador del modelo
      */
@@ -39,4 +41,13 @@ export const VehicleSchema = new mongoose.Schema({
     licensePlate : { type: String, required: false },
 
 
+    /**
+     * Year, in case it is a vehicle
+     */
+    year: { type: String, required: false },
+
+   /**
+   * Description optional
+   */
+    description: { type: String, required: true },
 });

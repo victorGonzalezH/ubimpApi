@@ -1,12 +1,13 @@
-export class VehicleGroup  {
+import { UbimpBase } from "./ubimp-base.model";
 
-    public name: string;
+export class VehicleGroup extends UbimpBase {
+    
+    
+    public vehiclesIds: string[];
 
-    public order: number;
-
-    private vehiclesIds: string[];
-
-    constructor() {
+    
+    constructor(public name: string,  public userId: string, public order?: number) {
+        super();
         this.vehiclesIds = [];
     }
 
@@ -14,5 +15,7 @@ export class VehicleGroup  {
         this.vehiclesIds.push(vehicleId);
     }
 
-    
+    createMockObject(): UbimpBase {
+        throw new Error("Method not implemented.");
+    }
 }

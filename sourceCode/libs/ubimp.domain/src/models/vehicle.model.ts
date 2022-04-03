@@ -1,24 +1,26 @@
+import { UbimpBase } from "./ubimp-base.model";
 
 /**
  * Clase dominio de un vehiculo
  */
- export class Vehicle {
-
-    public name: string;
+ export class Vehicle extends UbimpBase {
     
-    public userId: string;
-    
-    public groupId: string;
+    constructor(
+    public name: string,
+    public ownerId: string,
+    public deviceId: string,
+    public objectTypeId: string,
+    public description: string,
+    public brandId?: string,
+    public modelId?: string,
+    public licensePlate?: string,
+    public year?: string) {
+        super();
+    }
 
-    public icon: string;
 
-    public brandId: string;
+   static createMockObject(): UbimpBase {
 
-    public modelId: string;
-
-    public licensePlate: string;
-
-    constructor() {
-
+        return new Vehicle('','','','','','','','','');
     }
 }

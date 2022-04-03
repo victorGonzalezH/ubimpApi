@@ -13,6 +13,10 @@ export const VehicleGroupSchema = new mongoose.Schema({
      */
     order: { type: Number, required: true },
 
+    /**
+     * User owner id
+     */
+    userId: { type: String, required: true },
 
     /**
      * Identificadores de los vehiculos que pertenecen al grupo

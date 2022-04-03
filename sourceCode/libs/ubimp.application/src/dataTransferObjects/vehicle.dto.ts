@@ -2,14 +2,18 @@ export interface VehicleDto {
 
     name: string;
 
-    brand: string;
+    objectTypeId: string;
+    
+    brand?: string;
 
-    model: string;
+    model?: string;
 
-    licensePlate: string;
+    licensePlate?: string;
 
-    icon: string;
+    year?: string;
 
-    year: string;
+    description: string;
+
+    vehicleGroupName: string;
 
 }

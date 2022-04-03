@@ -3,6 +3,8 @@ import { VehicleDto } from './vehicle.dto';
 
 export interface VehicleGroupDto {
 
+    id: string;
+    
     name: string;
 
     order: number;
