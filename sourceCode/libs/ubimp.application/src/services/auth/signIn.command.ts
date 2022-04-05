@@ -17,10 +17,26 @@ export class SignInCommand extends BaseCommand {
 
     secondLastName: string;
 
-    // @IsNotEmpty()
-    // @Matches(/[0-9A-Fa-f]{24}/)
-    systemId: string;
+    countryId: string;
 
+    stateId: string;
+
+    street: string;
+
+    number: string;
+
+    postalCode: string;
+
+    /**
+     * If the user has an owner, this could happen when a owner user adds a user from his
+     * session
+     */
+    ownerId: string;
+
+    /** This property is not sent by the client.
+     * The backend is in charge to set the systemId
+    */
+     systemId: string;
 
     constructor() {
         super();
