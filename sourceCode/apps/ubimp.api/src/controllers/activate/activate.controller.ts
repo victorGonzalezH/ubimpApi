@@ -15,7 +15,7 @@ export class ActivateController {
      */
     @Post()
     async activate(@Body() tokenCommand: { token: string, lang: string}): Promise<ApiResultBaseDto> {
-       return  await this.ubimpApplication.activate(tokenCommand.token, tokenCommand.lang as Langs);
+        return  await this.ubimpApplication.activate(tokenCommand.token, tokenCommand.lang as Langs);
     }
 
 }
