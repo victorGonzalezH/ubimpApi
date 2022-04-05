@@ -25,6 +25,8 @@ import { DeviceSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/devi
 import { VehiclesController } from './controllers/vehicles/vehicles.controller';
 import { VehicleSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/vehicle.schema';
 import { VehicleGroupSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/vehicle-group.schema';
+import { BrandsController } from './controllers/brands/brands.controller';
+import { RefreshTokenSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/refresh-token.schema';
 
 
 @Module({
@@ -44,9 +46,10 @@ import { VehicleGroupSchema } from '@ubi/ubimp.infrastructure/persistence/schema
               { name: 'Device', schema: DeviceSchema },
               { name: 'Vehicle',  schema: VehicleSchema },
               { name: 'VehicleGroup',  schema: VehicleGroupSchema },
+              { name: 'RefreshToken',  schema: RefreshTokenSchema },
             ]) 
           ],
   controllers: [AppController, VerifyController, 
-    ActivateController, NetController, DevicesController, VehiclesController],
+    ActivateController, NetController, DevicesController, VehiclesController, BrandsController],
 })
 export class UbimpApiModule {}
