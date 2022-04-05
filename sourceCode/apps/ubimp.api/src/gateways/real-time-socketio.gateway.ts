@@ -4,13 +4,12 @@ import { Subject, Observable } from 'rxjs';
 import { UbimpApplicationService } from 'uba/ubimp.application';
 
 @WebSocketGateway({
-   
   handlePreflightRequest: (request, response) => {
   response.writeHead(200, 
     {
-      "Access-Control-Allow-Origin": 'http://localhost:4200', //<-- NO se debe de dejar abierto cualquier origen
+      "Access-Control-Allow-Origin": 'https://localhost:4200', //<-- NO se debe de dejar abierto cualquier origen
       "Access-Control-Allow-Methods": "GET,POST",
-      'Access-Control-Allow-Headers': 'x-clientid',
+      'Access-Control-Allow-Headers': 'authorization',
       "Access-Control-Allow-Credentials": true
   });
     response.end();
@@ -23,11 +22,11 @@ export class SocketioGateway implements OnGatewayInit, OnGatewayConnection, OnGa
   @WebSocketServer() // Con este decorador, nestjs asigna el servidor a esta variable una vez que esta listo
   private server: Server;
 
-  private localClients: Socket[];
+  // private localClients: Socket[];
 
-  get clients(): Socket[] {
-    return this.localClients;
-  }
+  // get clients(): Socket[] {
+  //   return this.localClients;
+  // }
 
 
   private localIsInitialized: boolean;
@@ -58,17 +57,19 @@ export class SocketioGateway implements OnGatewayInit, OnGatewayConnection, OnGa
    * @param ubimpApp Aplicacion Ubimp
    */
   constructor(private ubimpApp: UbimpApplicationService) {
-    // Se inicializa el arreglo de clientes
-    this.localClients = [];
     
     this.noInitializedMessage = 'Server not initialized';
 
     // Se suscribe al observable para escuchar las ubicaciones 
     this.ubimpApp.locations
-    .subscribe({ next: newLocation => {
+    .subscribe({ next: newSocketLocation => {
+      if(newSocketLocation.socket !== undefined && newSocketLocation.socket !== null)
+      {
+        newSocketLocation.socket.emit('newLocation', newSocketLocation.location, (ack: any) => {
 
-      this.server.emit('newLocation', newLocation);
-
+        });
+      }
+      
     }, error: error => {}, complete: () => {} })
 
   }
@@ -80,17 +81,27 @@ export class SocketioGateway implements OnGatewayInit, OnGatewayConnection, OnGa
    * @param args 
    */
   handleConnection(client: Socket, ...args: any[]) {
-    this.localClients.push(client);
-    // console.log(client.handshake.headers['x-clientid']);
     
+    // We get token from the authorization from the headers
+    const token = client.handshake.headers['authorization'];
+    // If the user is authenticated
+    if(this.ubimpApp.getAuthenticatedUser(token) !== undefined)
+    {
+      this.ubimpApp.attachSocketToAuthenticatedToUser(token, client);
+    }
+    else
+    {
+      // Disconnect the socket client if the user is no longer authenticated
+      client.disconnect(true);
+    }
   }
+
 
   /**
    * Evento que se dispara cuando se desconecta un client socketio
    * @param client Cliente que se desconecta
    */
   handleDisconnect(client: Socket) {
-
   }
 
 
