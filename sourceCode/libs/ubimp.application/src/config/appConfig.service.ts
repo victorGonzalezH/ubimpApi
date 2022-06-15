@@ -19,6 +19,10 @@ export class AppConfigService {
     private msPort: number;
     private msHost: string;
 
+    private apiPort: number;
+    private apiHost: string;
+    private apiProtocol: string;
+
     private webPort: number;
     private webHost: string;
     private webProtocol: string;
@@ -40,6 +44,11 @@ export class AppConfigService {
     private passwordSaltRoundsLocal: number;
     private activationTokenLocal: SignOptions;
     private accessTokenLocal: SignOptions;
+    private refreshTokenLocalOptions: 
+    { 
+        expiresInDays: number,
+        name: string
+    };
 
     private smsVerificationCodeLengthLocal: number;
     private jwtSecretLocal;
@@ -55,9 +64,14 @@ export class AppConfigService {
         this.envTag = process.env.NODE_ENV === 'production' ? 'prod' : 'dev' ;
         this.defaultLanguage =  Langs[this.configService.get<string>('defaultLanguage')];
         this.disableErrorMessages = this.envTag === 'prod' ? true : false;
+        this.apiPort = this.configService.get<number>(this.envTag + '.api.port');
+        this.apiHost = this.configService.get<string>(this.envTag + '.api.host');
+        this.apiProtocol = this.configService.get<string>(this.envTag + '.api.protocol');
+       
         this.webPort = this.configService.get<number>(this.envTag + '.web.port');
         this.webHost = this.configService.get<string>(this.envTag + '.web.host');
         this.webProtocol = this.configService.get<string>(this.envTag + '.web.protocol');
+        
         this.msProtocol = this.converStringProtocol(configService.get<number>(this.envTag + '.microservice.protocol'));
         this.msPort = this.configService.get<number>(this.envTag + '.microservice.port');
         this.msHost = this.configService.get<string>(this.envTag + '.microservice.host');
@@ -77,6 +91,8 @@ export class AppConfigService {
 
         this.activationTokenLocal = this.configService.get<SignOptions>(this.envTag + '.tokens.activation');
         this.accessTokenLocal = this.configService.get<SignOptions>(this.envTag + '.tokens.access');
+        this.refreshTokenLocalOptions = this.configService.get<{expiresInDays: number, name: string }>(this.envTag + '.tokens.refresh');
+        
         this.smsVerificationCodeLengthLocal = this.configService.get<number>('sms_verification_code_length');
         this.jwtSecretLocal = configService.get<string>(this.envTag + '.jwt.secret');
     }
@@ -110,10 +126,10 @@ export class AppConfigService {
     }
 
     /**
-     * Obtiene el puerto web
+     * Obtiene el puerto donde esta ejectuandose el servicio api
      */
-    public getWebPort(): number {
-        return this.webPort;
+    public getApiPort(): number {
+        return this.apiPort;
     }
 
     /**
@@ -175,10 +191,26 @@ export class AppConfigService {
         return this.activationTokenLocal;
     }
 
+
     /**
-     * Obtiene el host actual web / get de actual web host
+     * Gets the access token options     
      */
-    get currentHost() {
+    get accessTokenOptions(): SignOptions {
+        return this.accessTokenLocal;
+    }
+
+    /**
+     * Obtiene el api host actual/ get de actual api host
+     */
+    get currentApiHost() {
+
+        return  `${this.apiProtocol}://${this.apiHost}:${this.apiPort}`;
+    }
+
+    /**
+     * Obtiene el web host actual/ get de actual web host
+     */
+     get currentWebHost() {
 
         return  `${this.webProtocol}://${this.webHost}:${this.webPort}`;
     }
@@ -193,6 +225,14 @@ export class AppConfigService {
     get jwtSecret()
     {
         return this.jwtSecretLocal;
+    }
+
+    /**
+     * Gets the refresh token options
+     */
+    get refreshTokenOptions(): { expiresInDays: number, name: string } {
+
+        return this.refreshTokenLocalOptions;
     }
 
 }
