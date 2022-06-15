@@ -6,6 +6,8 @@ export interface AuthenticatedUser {
 
     username: string;
 
+    id: string;
+
     socketClient?: Socket;
 
     loginCount: number;
