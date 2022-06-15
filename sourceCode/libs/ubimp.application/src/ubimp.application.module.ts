@@ -26,11 +26,16 @@ import { VehiclesRepository } from '@ubi/ubimp.infrastructure/persistence/reposi
 import { VehicleSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/vehicle.schema';
 import { VehiclesApplication } from './services/vehicle/vehicle.service';
 import { JwtStrategy } from './services/auth/jwt.strategy';
+import { BrandsRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/brands-repository/brands-repository.service';
+import { BrandSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/brand.schema';
+import { BrandModelSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/brand-model.schema';
+import { RefreshTokenSchema } from '@ubi/ubimp.infrastructure/persistence/schemas/refresh-token.schema';
+import { RefreshTokenRepository } from '@ubi/ubimp.infrastructure/persistence/repositories/refresh-token-repository/refresh-token-repository.service';
 
 /**
  * Resuelve el jwt secret de acuerdo al ambiente en que se
  * esta ejecutando. NO se usa el servicio de AppConfigService
- * porque al inyectarse como depenencia el framework no lo
+ * porque al inyectarse como dependencia el framework no lo
  * puede resolver, esto puede deberse a que el servicio
  * esta declarado en el mismo modulo application.module que 
  * es en donde se esta configurando el modulo JWT
@@ -78,6 +83,8 @@ const ResolveJWTSecret = async() => {
   VehiclesRepository,
   VehicleGroupRepository,
   VehiclesApplication,
+  BrandsRepository,
+  RefreshTokenRepository,
   ],
   exports: [UbimpApplicationService, AuthService, DevicesApplication, VehiclesApplication],
   imports: [UbimpInfrastructureModule, PassportModule,
@@ -104,6 +111,9 @@ const ResolveJWTSecret = async() => {
               { name: 'Device',   schema: DeviceSchema },
               { name: 'Vehicle',  schema: VehicleSchema },
               { name: 'VehicleGroup',  schema: VehicleGroupSchema },
+              { name: 'Brand', schema: BrandSchema },
+              { name: 'BrandModel', schema: BrandModelSchema },
+              { name: 'RefreshToken',  schema: RefreshTokenSchema },
             ]),
             ],
 })
