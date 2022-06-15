@@ -13,6 +13,11 @@ export default () => ({
             host: process.env.DEV_WEB_HOST,
             port: process.env.DEV_WEB_PORT,
         },
+        api: {
+            protocol: process.env.DEV_API_PROTOCOL,
+            host: process.env.DEV_API_HOST,
+            port: process.env.DEV_API_PORT,
+        },
         database: {
                     host: process.env.DEV_DATABASE_HOST,
                     port: parseInt(process.env.DEV_DATABASE_PORT, 10) || 27017,
@@ -46,6 +51,10 @@ export default () => ({
         tokens: {
             activation: { expiresIn: process.env.DEV_TOKEN_ACTIVATION_EXPIRES },
             access: { expiresIn: process.env.DEV_TOKEN_ACCESS_EXPIRES },
+            refresh : { 
+                expiresInDays:      process.env.DEV_REFRESH_TOKEN_ACCESS_EXPIRES_IN_DAYS,
+                name: process.env.DEV_REFRESH_TOKEN_ACCESS_NAME
+            },
         },
     },
     prod : {
