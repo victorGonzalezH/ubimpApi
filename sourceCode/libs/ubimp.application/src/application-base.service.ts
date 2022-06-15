@@ -1,17 +1,17 @@
 import { Message } from "@ubd/ubimp.domain";
 import { MessagesRepository } from "@ubi/ubimp.infrastructure/persistence/repositories/messages.repository.service";
-import { ApiResultBase, ApiResultBaseDto, ApplicationBase } from "utils";
+import { ApiResultBase, ApiResultBaseDto, ApplicationBase, CallSources, DataTypes } from "utils";
 import { AppConfigService } from "./config/appConfig.service";
 import { EnvironmentTypes, Langs } from 'utils';
 import { Inject } from "@nestjs/common";
 import { ClientProxy } from "@nestjs/microservices";
-import { CallSources } from "./enums/callSources.enum";
+import { User } from "@ubd/ubimp.domain/models/user.model";
 
 export class ApplicationBaseService extends ApplicationBase
 {
 
-    constructor(public appConfigService: AppConfigService,
-        public messagesRepository: MessagesRepository,
+    constructor(public messagesRepository: MessagesRepository,
+        public appConfigService: AppConfigService,
         @Inject('USERS_SERVICE') public usersClient: ClientProxy)
     {
         super();
@@ -79,7 +79,26 @@ export class ApplicationBaseService extends ApplicationBase
 
         try {
             // Se hace la llamada al servicio de usuarios para obtener el usuario
-            const result = await this.usersClient.send(pattern, getUserByNamePayLoad).toPromise();
+            return await this.usersClient.send(pattern, getUserByNamePayLoad).toPromise();
+        } catch (exception)  {
+            throw exception;
+            // return new AppInternalServerError();
+        }
+    }
+
+
+    /**
+     * Obtiene un usuario (desde el microservicio de usuarios)
+     * @param userId identificador del usuario (el que asiga la base de datos)
+     * @returns 
+     */
+    public async getUserById(userId: string): Promise<any> {
+        const pattern = { command: 'getByPropertyNameValue' };
+        const getByPropertyNameValuePayLoad = { propertyName: '_id', propertyValue: userId, propertyType: DataTypes.string, systemId: this.appConfigService.getSystemId(), callSource: CallSources.Microservice };
+
+        try {
+            // Se hace la llamada al servicio de usuarios para obtener el usuario
+            const result = await this.usersClient.send(pattern, getByPropertyNameValuePayLoad).toPromise();
             return result;
         } catch (exception)  {
             throw exception;
