@@ -4,6 +4,8 @@
  */
 export class Device {
 
+    public _id: string;
+
     /**
      * IMEI
      */
@@ -14,31 +16,36 @@ export class Device {
      */
     private phoneNumbers: string[];
 
+    
     /**
-     * Indica si el ultimo numero en el listado de nuemeros telefonicos es el actual que usa
-     * el dispositivo
+     * Indica el numero de telefono actual que usa el dispositivo
      */
-    public lastPhoneNumberIsTheCurrentOne: boolean;
-
+    public currentPhoneNumber: string;
 
     /**
-     * Listado de usuarios que han usado el dispositivo, incluyendo el actual
+     * Listado de usuarios que han sido dueños del dispositivo, incluyendo el actual
      */
     private users: string[];
-
+    
     /**
-     * Indica si el ultimo usuario en el listado de usuarios es el actual usuario "dueño" del
-     * dispositivo
+     * Indica el id del acutal dueno del dispositivo
      */
-    public lastUserIsTheCurrentOne: boolean;
+     public currentOwnerId: string;
 
+    
+    /**
+     * Establish if the device if assigned to a vehicle or not
+     */
+    isAssigned: boolean;
+    
 
     constructor() {
-
           this.phoneNumbers = [];
           this.users = [];
-          this.lastUserIsTheCurrentOne = false;
-          this.lastPhoneNumberIsTheCurrentOne = false;
+          this.currentOwnerId = '';
+          this.currentPhoneNumber = '';
+          this.isAssigned = false;
+          this.imei = '';
     }
 
 
@@ -53,9 +60,9 @@ export class Device {
 
     /**
      * 
-     * @returns Obtiene el identificador del ultimo usuario
+     * @returns Obtiene el identificador del ultimo usuario propietario
      */
-    getLastUserId(): string {
+    public getLastOwnerId(): string {
         if(this.users != null && this.users != undefined && this.users.length > 0)
         {
             return this.users[this.users.length - 1];
@@ -73,7 +80,7 @@ export class Device {
         if(this.phoneNumbers != null && this.phoneNumbers != undefined)
         {
             this.phoneNumbers.push(phoneNumber);
-            this.lastPhoneNumberIsTheCurrentOne = true;
+            this.currentPhoneNumber = phoneNumber;
         }
     }
 
@@ -86,7 +93,7 @@ export class Device {
         if(this.users != null && this.users != undefined)
         {
             this.users.push(userId);
-            this.lastUserIsTheCurrentOne = true;
+            this.currentOwnerId = userId;
         }
     }
 
