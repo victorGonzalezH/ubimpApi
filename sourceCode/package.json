@@ -27,7 +27,7 @@
     "@nestjs/microservices": "^7.5.5",
     "@nestjs/mongoose": "^7.1.1",
     "@nestjs/passport": "^7.1.4",
-    "@nestjs/platform-express": "^7.5.5",
+    "@nestjs/platform-express": "^9.2.1",
     "@nestjs/platform-socket.io": "^7.5.5",
     "@nestjs/platform-ws": "^6.11.11",
     "@nestjs/schedule": "^0.4.1",
