@@ -39,7 +39,7 @@
     "aws-sdk": "^2.806.0",
     "bcrypt": "^4.0.1",
     "class-transformer": "^0.2.3",
-    "class-validator": "^0.12.2",
+    "class-validator": "^0.14.0",
     "domain.utils": "file:domain.utils-1.0.0.tgz",
     "infrastructure.utils": "file:infrastructure.utils-1.0.0.tgz",
     "mongoose": "^5.10.19",
